@@ -1,0 +1,31 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "pipeline": {
+    "build": {
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "public/js/**",
+        "lib/**"
+      ]
+    },
+    "lint": {
+      "cache": true
+    },
+    "test": {
+      "cache": true
+    },
+    "clean": {
+      "cache": false
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "watch": {
+      "cache": false,
+      "persistent": true
+    }
+  }
+}

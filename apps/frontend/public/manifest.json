@@ -1,0 +1,22 @@
+{
+  "name": "YoGo 有夠菜-芽菜工坊",
+  "short_name": "YoGo 芽菜",
+  "description": "自己種植無毒、新鮮、健康的芽菜。YoGo 有夠菜提供最優質的芽菜種植套組與新鮮芽菜零售。",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f7faf8",
+  "theme_color": "#2d6a4f",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "img/brand/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "img/brand/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

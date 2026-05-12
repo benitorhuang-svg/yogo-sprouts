@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# IDEs and OS files
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+
+# Temporary / Scratch Files
+.scratch/
+
+# Build outputs (TypeScript compile outputs are inside public/js)
+# Optional: if you prefer to build in production, you can keep or ignore compiled output.
+# public/js/app.js

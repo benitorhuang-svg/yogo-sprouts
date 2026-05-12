@@ -1,0 +1,7 @@
+.firebase
+.turbo
+node_modules
+apps/*/dist
+apps/*/public/js
+apps/*/lib
+packages/*/dist

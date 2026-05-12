@@ -1,0 +1,13 @@
+
+> frontend@1.0.0 test
+> vitest run
+
+
+ RUN  v4.1.6 C:/Users/benit/Desktop/YoGo/apps/frontend
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  20:41:25
+   Duration  344ms (transform 36ms, setup 0ms, import 55ms, tests 5ms, environment 0ms)
+

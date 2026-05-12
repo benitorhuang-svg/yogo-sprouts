@@ -1,0 +1,33 @@
+{
+  "name": "backend",
+  "scripts": {
+    "lint": "eslint .",
+    "build": "tsc",
+    "watch": "tsc -w",
+    "shell": "npm run build && firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "lib/index.js",
+  "dependencies": {
+    "@yogo/shared": "*",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.2.0",
+    "firebase-admin": "^12.0.0",
+    "firebase-functions": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@typescript-eslint/eslint-plugin": "^8.59.3",
+    "@typescript-eslint/parser": "^8.59.3",
+    "eslint": "^9.39.4",
+    "eslint-config-prettier": "^10.1.8",
+    "typescript": "^5.0.0"
+  },
+  "private": true
+}

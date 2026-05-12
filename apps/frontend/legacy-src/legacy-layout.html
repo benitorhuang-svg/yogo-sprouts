@@ -1,0 +1,63 @@
+<header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="index.html">
+        <img src="img/brand/logo.png" alt="YoGo Logo" class="logo-img" />
+        <span>YoGo 有夠菜-芽菜工坊</span>
+      </a>
+      <nav class="main-nav">
+        <a href="about.html">關於 YoGo</a>
+        <a href="index.html" class="active">商品選購</a>
+        <button id="theme-toggle-btn" class="theme-toggle-btn" aria-label="切換深淺模式">🌙</button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Announcement Banner -->
+  <div class="announcement-bar">
+    <div class="marquee">
+      <span>❄️ 冷藏運送：單筆滿 $2,000 享免運優惠！</span>
+      <span>📦 常溫商品：單筆滿 $800 享免運優惠！</span>
+      <span>❄️ 冷藏運送：單筆滿 $2,000 享免運優惠！</span>
+      <span>📦 常溫商品：單筆滿 $800 享免運優惠！</span>
+    </div>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="search-container">
+    <span class="search-icon-wrapper">
+      <svg class="search-icon-svg" viewBox="0 0 24 24">
+        <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+      </svg>
+    </span>
+    <input type="text" id="search-input" placeholder="🔍 搜尋商品名稱、規格或描述..." class="search-input" autocomplete="off" />
+    <button id="search-clear-btn" class="search-clear-btn" style="display: none;" aria-label="清空搜尋">✕</button>
+  </div>
+
+  <!-- Category Tabs -->
+  <div class="category-tabs">
+    <button class="tab-btn active" data-category="all">全部</button>
+    <button class="tab-btn" data-category="kit">種植套組</button>
+    <button class="tab-btn" data-category="parts">零配件</button>
+    <button class="tab-btn" data-category="seeds">種子零售</button>
+    <button class="tab-btn" data-category="fresh">新鮮芽菜</button>
+    <button class="tab-btn" data-category="peanut">好事花生</button>
+    <button class="tab-btn" data-category="drinks">即飲系列</button>
+    <button class="tab-btn" data-category="favorites" id="favorites-tab-btn">❤️ 我的收藏</button>
+  </div>
+
+  <!-- Product Sections -->
+  <main class="shop-main" id="shop">
+    <!-- Sections rendered by app.js -->
+  </main>
+
+  <!-- Cart Bar -->
+  <div class="cart-bar">
+    <span class="cart-subtotal">小計（運費另計）：<strong id="cart-total">$0</strong></span>
+    <button class="checkout-btn" id="checkout-btn">確認結帳</button>
+  </div>
+
+  <!-- Product Detail Modal Mount Point -->
+  <div id="product-detail-modal" class="modal-wrapper"></div>
+
+  <!-- Multistep Checkout Modal Mount Point -->
+  <div id="checkout-modal" class="modal-wrapper"></div>
