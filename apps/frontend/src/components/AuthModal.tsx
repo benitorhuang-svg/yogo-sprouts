@@ -87,7 +87,7 @@ const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
               <div className="profile-header">
                 <div className="profile-avatar">🌱</div>
                 <h2>{user?.name}</h2>
-                <span className="tier-badge" onClick={() => setView('tiers')} style={{ cursor: 'pointer', title: '點擊查看等級說明' }}>
+                <span className="tier-badge" onClick={() => setView('tiers')} title="點擊查看等級說明" style={{ cursor: 'pointer' }}>
                   {user?.tier} ℹ️
                 </span>
               </div>
