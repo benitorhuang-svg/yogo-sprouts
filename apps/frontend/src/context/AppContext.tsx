@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useQuery } from '@tanstack/react-query';
 import { Product, Category, CartState, CATEGORIES, INITIAL_PRODUCTS } from '@yogo/shared';
 import { audioManager } from '@/audioManager';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, increment } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 
 export interface User {
@@ -27,7 +27,7 @@ interface AppContextType {
   isFavorite: (productId: number) => boolean;
   addToCart: (productId: number) => void;
   removeFromCart: (productId: number) => void;
-  clearCart: () => void;
+  clearCart: () => Promise<void>;
   login: (email: string, name?: string) => Promise<void>;
   logout: () => void;
   getTotal: () => number;
@@ -152,8 +152,29 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   };
 
-  const clearCart = () => {
+  const clearCart = async () => {
+    const currentCart = { ...cart };
     setCart({});
+
+    try {
+      const orderId = 'YOGO_' + Date.now();
+      const orderRef = doc(db, 'orders', orderId);
+      await setDoc(orderRef, {
+        orderId,
+        items: currentCart,
+        total: getTotal(),
+        user: user?.name || '訪客芽農',
+        createdAt: new Date().toISOString()
+      });
+
+      for (const [id, qty] of Object.entries(currentCart)) {
+        const pRef = doc(db, 'products', id);
+        await setDoc(pRef, { stock: increment(-qty) }, { merge: true });
+      }
+      console.log('Firestore 訂單建立與庫存扣減完成！');
+    } catch (e) {
+      console.warn('Firestore 尚未配置或處於離線狀態，本機模擬結帳順利完成：', e);
+    }
   };
 
   const getTotal = () => {
