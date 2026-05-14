@@ -12,7 +12,7 @@ dist/index.html                   2.57 kB │ gzip:  1.28 kB
 dist/assets/index-DmuM_rqK.css   31.48 kB │ gzip:  6.37 kB
 dist/assets/index-y_otkeOa.js   241.13 kB │ gzip: 76.56 kB
 
-[32m✓ built in 796ms[39m
+[32m✓ built in 870ms[39m
 
 PWA v1.3.0
 mode      generateSW
