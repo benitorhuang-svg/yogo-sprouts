@@ -10,7 +10,7 @@ const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
   const { user, login, logout } = useAppContext();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [view, setView] = useState<'menu' | 'settings'>('menu');
+  const [view, setView] = useState<'menu' | 'settings' | 'tiers'>('menu');
   const [editName, setEditName] = useState('');
   const [phone, setPhone] = useState('0912-345-678');
   const [address, setAddress] = useState('台北市大安區和平東路二段106號');
@@ -82,12 +82,14 @@ const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
       <div className="modal-card auth-modal-card profile-modal-card" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close-btn" onClick={onClose}>✕</button>
         <div className="auth-modal-content">
-          {view === 'menu' ? (
+          {view === 'menu' && (
             <>
               <div className="profile-header">
                 <div className="profile-avatar">🌱</div>
                 <h2>{user?.name}</h2>
-                <span className="tier-badge">{user?.tier}</span>
+                <span className="tier-badge" onClick={() => setView('tiers')} style={{ cursor: 'pointer', title: '點擊查看等級說明' }}>
+                  {user?.tier} ℹ️
+                </span>
               </div>
               <div className="profile-stats">
                 <div className="stat-box">
@@ -100,6 +102,7 @@ const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
                 </div>
               </div>
               <div className="profile-menu">
+                <div className="menu-item" onClick={() => setView('tiers')}>🏆 會員等級與晉升藍圖</div>
                 <div className="menu-item" onClick={() => alert('📦 載入歷史訂單中... (目前尚無歷史訂單)')}>📦 歷史訂單紀錄</div>
                 <div className="menu-item" onClick={() => alert('💖 載入收藏清單中... (請先於頁面點擊愛心收藏)')}>💖 我的收藏清單</div>
                 <div className="menu-item" onClick={() => setView('settings')}>⚙️ 會員資料設定</div>
@@ -108,7 +111,9 @@ const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
                 登出帳號
               </button>
             </>
-          ) : (
+          )}
+
+          {view === 'settings' && (
             <>
               <div className="profile-header" style={{ marginBottom: 15 }}>
                 <h2>⚙️ 會員資料設定</h2>
@@ -137,6 +142,41 @@ const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
                   返回上一頁
                 </button>
               </div>
+            </>
+          )}
+
+          {view === 'tiers' && (
+            <>
+              <div className="profile-header" style={{ marginBottom: 15 }}>
+                <h2>🏆 YoGo 芽農晉升藍圖</h2>
+                <p className="auth-subtitle" style={{ marginBottom: 5 }}>累積紅利點數解鎖專屬 VIP 綠色禮遇</p>
+              </div>
+              <div className="tiers-container">
+                <div className="tier-card">
+                  <div className="tier-header">🌱 綠手指新手</div>
+                  <ul className="tier-perks">
+                    <li>• 永久免年費</li>
+                    <li>• 消費每 $100 贈 1 點</li>
+                  </ul>
+                </div>
+                <div className="tier-card">
+                  <div className="tier-header">🌿 綠意大使</div>
+                  <ul className="tier-perks">
+                    <li>• 年度消費滿 $3,000</li>
+                    <li>• 點數兩倍送 + 免運券</li>
+                  </ul>
+                </div>
+                <div className="tier-card current">
+                  <div className="tier-header vip">👑 VIP 芽苗大師</div>
+                  <ul className="tier-perks">
+                    <li>• 年度消費滿 $8,000</li>
+                    <li>• 全館享 9 折 + 生日大禮包</li>
+                  </ul>
+                </div>
+              </div>
+              <button className="quick-btn" onClick={() => setView('menu')} style={{ marginTop: 20 }}>
+                返回會員中心
+              </button>
             </>
           )}
         </div>

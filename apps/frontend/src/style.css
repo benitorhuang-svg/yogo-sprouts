@@ -1520,6 +1520,57 @@ body.modal-open {
 }
 .logout-btn:hover { background: #DC2626; }
 
+/* Membership Tiers Progression Styles */
+.tiers-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+  margin-top: 10px;
+}
+.tier-card {
+  padding: 14px 18px;
+  border-radius: var(--radius);
+  background: var(--bg-sub);
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s;
+}
+.tier-card.current {
+  background: rgba(16, 185, 129, 0.08);
+  border: 2px solid var(--green-dark);
+}
+.tier-card.current::after {
+  content: "目前等級";
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: var(--green-dark);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+.tier-header {
+  font-size: 1.05rem;
+  font-weight: bold;
+  color: var(--text-main);
+  margin-bottom: 6px;
+}
+.tier-header.vip {
+  color: var(--green-dark);
+}
+.tier-perks {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-sub);
+  line-height: 1.6;
+}
+
 /* ========================================
    Multistep Checkout Modal Design
 ======================================== */
