@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useQuery } from '@tanstack/react-query';
 import { Product, Category, CartState, CATEGORIES, INITIAL_PRODUCTS } from '@yogo/shared';
 import { audioManager } from '@/audioManager';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { db } from '../firebaseClient';
 
 export interface User {
   name: string;
@@ -26,7 +28,7 @@ interface AppContextType {
   addToCart: (productId: number) => void;
   removeFromCart: (productId: number) => void;
   clearCart: () => void;
-  login: (email: string, name?: string) => void;
+  login: (email: string, name?: string) => Promise<void>;
   logout: () => void;
   getTotal: () => number;
   isLoadingProducts: boolean;
@@ -67,14 +69,50 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [user]);
 
-  const login = (email: string, name?: string) => {
+  const login = async (email: string, name?: string) => {
     audioManager.playSuccess();
-    setUser({
+    const uid = email.replace(/[^a-zA-Z0-9]/g, '_');
+    const defaultUser: User = {
       name: name || email.split('@')[0] || '綠手指芽農',
       email,
-      tier: 'VIP 芽苗大使',
+      tier: '👑 VIP 芽苗大師',
       points: 168
-    });
+    };
+
+    // 1. 優先更新本機狀態與快取，確保 UI 零延遲互動體驗
+    setUser(defaultUser);
+
+    // 2. 背景非同步同步至 Firebase Firestore
+    try {
+      const userRef = doc(db, 'users', uid);
+      const snap = await getDoc(userRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        const updatedUser = {
+          name: name || data.displayName || defaultUser.name,
+          email: data.email || defaultUser.email,
+          tier: data.tier || defaultUser.tier,
+          points: data.points !== undefined ? data.points : defaultUser.points
+        };
+        setUser(updatedUser);
+        if (name) {
+          await setDoc(userRef, { displayName: name, updatedAt: new Date().toISOString() }, { merge: true });
+        }
+      } else {
+        await setDoc(userRef, {
+          uid,
+          displayName: defaultUser.name,
+          email: defaultUser.email,
+          tier: defaultUser.tier,
+          points: defaultUser.points,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      }
+      console.log('Firebase Firestore 雲端會員紀錄同步成功！');
+    } catch (e) {
+      console.warn('Firebase 專案尚未設定或無存取權限，已自動切換為離線本機模式：', e);
+    }
   };
 
   const logout = () => {
