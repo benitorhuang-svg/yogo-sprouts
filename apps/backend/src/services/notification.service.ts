@@ -1,9 +1,10 @@
 import * as functions from 'firebase-functions';
+import { logger } from '../utils/logger';
 
 export async function sendLineNotify(message: string): Promise<void> {
   const token = functions.config().line?.notify_token || process.env.LINE_NOTIFY_TOKEN;
   if (!token) {
-    console.log('[LINE Notify] Token is not configured. Logged notification:\n', message);
+    logger.info({ message }, '[LINE Notify] Token is not configured. Logged notification.');
     return;
   }
   try {
@@ -16,11 +17,11 @@ export async function sendLineNotify(message: string): Promise<void> {
       body: `message=${encodeURIComponent(message)}`,
     });
     if (!response.ok) {
-      console.error('[LINE Notify] API returned error status:', response.status);
+      logger.error({ status: response.status }, '[LINE Notify] API returned error status');
     } else {
-      console.log('[LINE Notify] Successfully notified merchant.');
+      logger.info('[LINE Notify] Successfully notified merchant.');
     }
   } catch (err) {
-    console.error('[LINE Notify] Failed to post to LINE Notify API:', err);
+    logger.error({ err }, '[LINE Notify] Failed to post to LINE Notify API');
   }
 }

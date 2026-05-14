@@ -1,11 +1,12 @@
 import * as admin from 'firebase-admin';
-import { INITIAL_PRODUCTS, INITIAL_COUPONS } from './constants';
+import { INITIAL_PRODUCTS, INITIAL_COUPONS } from '@yogo/shared';
+import { logger } from '../utils/logger';
 
 export async function seedDatabaseIfEmpty(db: admin.firestore.Firestore) {
   const productsColl = db.collection('products');
   const snapshot = await productsColl.limit(1).get();
   if (snapshot.empty) {
-    console.log('Seeding initial products into Firestore...');
+    logger.info('Seeding initial products into Firestore...');
     const batch = db.batch();
     INITIAL_PRODUCTS.forEach(p => {
       const docRef = productsColl.doc(String(p.id));
@@ -17,7 +18,7 @@ export async function seedDatabaseIfEmpty(db: admin.firestore.Firestore) {
   const couponsColl = db.collection('coupons');
   const couponSnapshot = await couponsColl.limit(1).get();
   if (couponSnapshot.empty) {
-    console.log('Seeding initial coupons into Firestore...');
+    logger.info('Seeding initial coupons into Firestore...');
     const batch = db.batch();
     INITIAL_COUPONS.forEach(c => {
       const docRef = couponsColl.doc(c.code);

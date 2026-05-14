@@ -1,6 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Product, Category, CartState } from '../types';
-import { CATEGORIES, INITIAL_PRODUCTS } from '../../legacy-src/data'; // Importing initial data for now
+import { useQuery } from '@tanstack/react-query';
+import { Product, Category, CartState, CATEGORIES, INITIAL_PRODUCTS } from '@yogo/shared';
+import { audioManager } from '@/audioManager';
+
+export interface User {
+  name: string;
+  email: string;
+  tier: string;
+  points: number;
+}
 
 interface AppContextType {
   products: Product[];
@@ -9,7 +17,7 @@ interface AppContextType {
   selectedCategory: string;
   searchQuery: string;
   favorites: number[];
-  setProducts: (products: Product[]) => void;
+  user: User | null;
   setCart: React.Dispatch<React.SetStateAction<CartState>>;
   setSelectedCategory: (category: string) => void;
   setSearchQuery: (query: string) => void;
@@ -17,17 +25,24 @@ interface AppContextType {
   isFavorite: (productId: number) => boolean;
   addToCart: (productId: number) => void;
   removeFromCart: (productId: number) => void;
+  clearCart: () => void;
+  login: (email: string, name?: string) => void;
+  logout: () => void;
   getTotal: () => number;
+  isLoadingProducts: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartState>({});
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [favorites, setFavorites] = useState<number[]>([]);
+  const [user, setUser] = useState<User | null>(() => {
+    const savedUser = localStorage.getItem('yogo-user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
 
   useEffect(() => {
     const savedFavs = localStorage.getItem('yogo-favorites');
@@ -45,25 +60,40 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [favorites]);
 
   useEffect(() => {
-    // Mimic loadProductsState
-    const fetchProducts = async () => {
-      try {
-        const res = await fetch('/api/products');
-        if (res.ok) {
-          const data = await res.json();
-          setProducts(data);
-          return;
-        }
-      } catch (e) {
-        console.error('Failed to fetch products from API, falling back to local memory.', e);
-      }
-      setProducts(JSON.parse(JSON.stringify(INITIAL_PRODUCTS)));
-    };
+    if (user) {
+      localStorage.setItem('yogo-user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('yogo-user');
+    }
+  }, [user]);
 
-    fetchProducts();
-  }, []);
+  const login = (email: string, name?: string) => {
+    audioManager.playSuccess();
+    setUser({
+      name: name || email.split('@')[0] || '綠手指芽農',
+      email,
+      tier: 'VIP 芽苗大使',
+      points: 168
+    });
+  };
+
+  const logout = () => {
+    setUser(null);
+  };
+
+  const { data: products = [], isLoading: isLoadingProducts } = useQuery<Product[]>({
+    queryKey: ['products'],
+    queryFn: async () => {
+      const res = await fetch('/api/products');
+      if (!res.ok) throw new Error('Network response was not ok');
+      return res.json();
+    },
+    initialData: JSON.parse(JSON.stringify(INITIAL_PRODUCTS)),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
   const addToCart = (productId: number) => {
+    audioManager.playCartAdd();
     setCart((prev) => ({
       ...prev,
       [productId]: (prev[productId] || 0) + 1,
@@ -82,6 +112,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         [productId]: newQty,
       };
     });
+  };
+
+  const clearCart = () => {
+    setCart({});
   };
 
   const getTotal = () => {
@@ -107,7 +141,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         selectedCategory,
         searchQuery,
         favorites,
-        setProducts,
+        user,
         setCart,
         setSelectedCategory,
         setSearchQuery,
@@ -115,7 +149,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         isFavorite,
         addToCart,
         removeFromCart,
+        clearCart,
+        login,
+        logout,
         getTotal,
+        isLoadingProducts,
       }}
     >
       {children}

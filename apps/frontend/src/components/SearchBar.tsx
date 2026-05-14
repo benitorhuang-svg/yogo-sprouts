@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '@/context/AppContext';
 
 const SearchBar: FC = () => {
   const { searchQuery, setSearchQuery } = useAppContext();
@@ -14,7 +14,7 @@ const SearchBar: FC = () => {
       <input
         type="text"
         id="search-input"
-        placeholder="🔍 搜尋商品名稱、規格或描述..."
+        placeholder=" 搜尋商品名稱、規格或描述..."
         className="search-input"
         autoComplete="off"
         value={searchQuery}

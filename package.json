@@ -16,6 +16,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,html,css}\"",
     "clean": "turbo run clean && rm -rf node_modules",
     "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
     "prepare": "husky"
   },
   "lint-staged": {

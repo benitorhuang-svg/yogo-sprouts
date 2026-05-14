@@ -6,6 +6,9 @@
     "outDir": "lib",
     "sourceMap": true,
     "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitOverride": true,
+    "exactOptionalPropertyTypes": true,
     "target": "es2021",
     "esModuleInterop": true,
     "skipLibCheck": true

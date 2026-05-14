@@ -1,16 +1,16 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "ESNext",
     "moduleResolution": "node",
-    "outDir": "./public/js",
-    "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "removeComments": false,
-    "noImplicitAny": true
+    "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*"]
+  "files": [],
+  "references": [
+    { "path": "./apps/frontend" },
+    { "path": "./apps/backend" },
+    { "path": "./packages/shared" }
+  ]
 }

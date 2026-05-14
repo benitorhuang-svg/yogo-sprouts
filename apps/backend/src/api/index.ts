@@ -5,6 +5,8 @@ import * as admin from 'firebase-admin';
 import { Product, Coupon } from '@yogo/shared';
 import { seedDatabaseIfEmpty, forceSeed } from '../data/seeder';
 import { sendLineNotify } from '../services/notification.service';
+import { logger } from '../utils/logger';
+import { checkoutSchema, couponQuerySchema, paymentCreateSchema } from './schemas';
 
 interface OrderItem {
   product_id: number;
@@ -54,8 +56,11 @@ app.get('/products', async (req, res) => {
 app.get('/coupon', async (req, res) => {
   try {
     await seedDatabaseIfEmpty(db);
-    const code = req.query.code as string;
-    if (!code) return res.status(400).json({ success: false, error: '請提供優惠碼' });
+    const validation = couponQuerySchema.safeParse(req.query);
+    if (!validation.success) {
+      return res.status(400).json({ success: false, error: validation.error.issues[0].message });
+    }
+    const { code } = validation.data;
 
     const doc = await db.collection('coupons').doc(code.toUpperCase()).get();
     if (!doc.exists) return res.status(404).json({ success: false, error: '無此優惠碼！' });
@@ -73,12 +78,14 @@ app.get('/coupon', async (req, res) => {
 });
 
 app.post('/checkout', checkoutLimiter, async (req, res) => {
-  const { customer, cart, couponCode, preferred_delivery_date } = req.body;
-
-  if (!customer || !customer.name || !customer.phone || !customer.contact || !customer.address) {
-    return res.status(400).json({ success: false, error: '收件人欄位填寫不完整！' });
+  const validation = checkoutSchema.safeParse(req.body);
+  if (!validation.success) {
+    return res.status(400).json({ success: false, error: '資料驗證失敗', details: validation.error.format() });
   }
-  if (!cart || Object.keys(cart).length === 0) {
+
+  const { customer, cart, couponCode, preferred_delivery_date } = validation.data;
+
+  if (Object.keys(cart).length === 0) {
     return res.status(400).json({ success: false, error: '購物車為空，無法結帳！' });
   }
 
@@ -177,8 +184,12 @@ ${itemsMessage}${result.orderData.coupon_code ? `\n🎫 優惠碼: ${result.orde
 });
 
 app.post('/payment/create', async (req, res) => {
-  const { orderId, amount } = req.body;
-  if (!orderId || !amount) return res.status(400).json({ success: false, error: '請提供 orderId 與 amount' });
+  const validation = paymentCreateSchema.safeParse(req.body);
+  if (!validation.success) {
+    return res.status(400).json({ success: false, error: validation.error.issues[0].message });
+  }
+  const { orderId, amount } = validation.data;
+  
   try {
     const orderDoc = await db.collection('orders').doc(orderId).get();
     if (!orderDoc.exists) return res.status(404).json({ success: false, error: '找不到該訂單！' });
@@ -199,14 +210,14 @@ app.post('/payment/callback', async (req, res) => {
     if (!orderSnap.exists) return res.status(404).send('Order not found');
     if (String(RtnCode) === '1') {
       await orderRef.update({ status: 'paid', paid_at: admin.firestore.Timestamp.now() });
-      console.log(`[Webhook success] Order ${orderId} successfully marked as PAID!`);
+      logger.info(`[Webhook success] Order ${orderId} successfully marked as PAID!`);
       return res.status(200).send('1|OK');
     } else {
-      console.warn(`[Webhook warning] Payment failed for Order ${orderId}: ${RtnMsg}`);
+      logger.warn(`[Webhook warning] Payment failed for Order ${orderId}: ${RtnMsg}`);
       return res.status(200).send('0|Payment failed');
     }
   } catch (err) {
-    console.error('[Webhook error] Failed to execute payment callback:', err);
+    logger.error({ err }, '[Webhook error] Failed to execute payment callback');
     return res.status(500).send('FAIL');
   }
 });

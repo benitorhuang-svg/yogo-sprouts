@@ -1,6 +1,6 @@
 import { FC } from 'react';
-import { useAppContext } from '../context/AppContext';
-import ProductCard from './ProductCard';
+import { useAppContext } from '@/context/AppContext';
+import ProductCard from '@/components/ProductCard';
 
 const ProductList: FC = () => {
   const { products, categories, selectedCategory, searchQuery, favorites } = useAppContext();

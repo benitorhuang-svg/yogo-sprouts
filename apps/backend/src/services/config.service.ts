@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import * as functions from 'firebase-functions';
+import { logger } from '../utils/logger';
 
 const envSchema = z.object({
   line: z.object({
@@ -12,7 +13,7 @@ export function validateConfig() {
   const result = envSchema.safeParse(config);
   
   if (!result.success) {
-    console.error('❌ Invalid Firebase Configuration:', result.error.format());
+    logger.error({ errors: result.error.format() }, '❌ Invalid Firebase Configuration');
     return null;
   }
   

@@ -26,3 +26,6 @@ export interface Coupon {
     expiresAt: string;
     active: boolean;
 }
+export declare const CATEGORIES: Category[];
+export declare const INITIAL_PRODUCTS: Product[];
+export declare const INITIAL_COUPONS: Coupon[];

@@ -1,6 +1,6 @@
 import { FC } from 'react';
-import { Product } from '../types';
-import { useAppContext } from '../context/AppContext';
+import { Product } from '@yogo/shared';
+import { useAppContext } from '@/context/AppContext';
 
 interface ProductCardProps {
   product: Product;

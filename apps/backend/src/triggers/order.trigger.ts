@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions';
 import { sendLineNotify } from '../services/notification.service';
+import { logger } from '../utils/logger';
 
 export const onOrderStatusChange = functions.firestore
   .document('orders/{orderId}')
@@ -10,7 +11,7 @@ export const onOrderStatusChange = functions.firestore
 
     if (!before || !after || before.status === after.status) return;
 
-    console.log(`[Order Change] ${orderId} transitioned from '${before.status}' to '${after.status}'`);
+    logger.info(`[Order Change] ${orderId} transitioned from '${before.status}' to '${after.status}'`);
 
     let customerMsg = '';
     switch (after.status) {
@@ -82,7 +83,7 @@ export const onOrderStatusChange = functions.firestore
     }
 
     if (customerMsg) {
-      console.log(`[Customer Notification Send Mock]\n`, customerMsg);
+      logger.info({ customerMsg }, `[Customer Notification Send Mock]`);
       await sendLineNotify(`📢 [狀態更新] 訂單 ${orderId} 狀態變更為【${after.status}】\n已對顧客發送通知訊息。`);
     }
-  });
+    });
