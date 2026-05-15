@@ -1,5 +1,10 @@
 # Dependencies
 node_modules/
+dist
+.turbo
+*.tsbuildinfo
+.env
+.firebase
 package-lock.json
 
 # IDEs and OS files
