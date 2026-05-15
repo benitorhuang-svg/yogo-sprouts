@@ -30,16 +30,21 @@ export const verifyAdmin = async (req: Request, res: Response, next: NextFunctio
   const user = (req as any).user;
 
   if (!user || !user.uid) {
-    return res.status(401).json({ success: false, error: '請先登入後台' });
+    return res.status(401).json({ success: false, error: '未偵測到登入狀態，請先登入' });
   }
 
   try {
     const adminUser = await admin.auth().getUser(user.uid);
+    console.log(`[Admin Access Check] UID: ${user.uid}, Email: ${adminUser.email}`);
+
     if (adminUser.email === 'admin@yogo.tw') {
       return next();
     }
-    return res.status(403).json({ success: false, error: '權限不足，僅限管理員存取' });
-  } catch {
-    return res.status(500).json({ success: false, error: '管理員身份驗證失敗' });
+    return res
+      .status(403)
+      .json({ success: false, error: `權限不足 (${adminUser.email})，僅限管理員存取` });
+  } catch (err: any) {
+    console.error('Admin Verify Error:', err);
+    return res.status(500).json({ success: false, error: `管理員身份驗證失敗: ${err.message}` });
   }
 };
