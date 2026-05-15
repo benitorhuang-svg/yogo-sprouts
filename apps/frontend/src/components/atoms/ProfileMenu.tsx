@@ -6,6 +6,7 @@ interface ProfileMenuProps {
   onLogout: () => void;
   onViewTiers: () => void;
   onViewSettings: () => void;
+  onViewCoupons: () => void;
 }
 
 /**
@@ -17,6 +18,7 @@ export const ProfileMenu: FC<ProfileMenuProps> = ({
   onLogout,
   onViewTiers,
   onViewSettings,
+  onViewCoupons,
 }) => {
   return (
     <div className="auth-modal-content">
@@ -35,9 +37,14 @@ export const ProfileMenu: FC<ProfileMenuProps> = ({
           <span className="stat-label">累積紅利</span>
           <span className="stat-value">{user.points} 點</span>
         </div>
-        <div className="stat-box">
+        <div
+          className="stat-box"
+          onClick={onViewCoupons}
+          style={{ cursor: 'pointer', border: '1px solid #2d6a4f22' }}
+        >
           <span className="stat-label">專屬優惠券</span>
-          <span className="stat-value">3 張</span>
+          <span className="stat-value">{user.coupons?.length || 0} 張</span>
+          <small style={{ fontSize: '0.65rem', color: '#2d6a4f' }}>點擊查看代碼</small>
         </div>
       </div>
 

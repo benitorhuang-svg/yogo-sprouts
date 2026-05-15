@@ -2,11 +2,14 @@ import React, { FC, useState } from 'react';
 import { Product, INITIAL_COUPONS } from '@yogo/shared';
 import { audioManager } from '@/audioManager';
 
+import { User } from '../../hooks/useAuth';
+
 interface CartStepProps {
   cart: Record<number, number>;
   products: Product[];
   subtotal: number;
   discount: number;
+  user: User | null;
   onAddToCart: (id: number) => void;
   onRemoveFromCart: (id: number) => void;
   onApplyCoupon: (code: string) => void;
@@ -22,6 +25,7 @@ export const CartStep: FC<CartStepProps> = ({
   products,
   subtotal,
   discount,
+  user,
   onAddToCart,
   onRemoveFromCart,
   onApplyCoupon,
@@ -37,15 +41,29 @@ export const CartStep: FC<CartStepProps> = ({
   const coldItems = cartItems.filter((item) => item.product?.cold);
   const normalItems = cartItems.filter((item) => !item.product?.cold);
 
-  const handleCoupon = () => {
-    const coupon = INITIAL_COUPONS.find((c) => c.code === couponInput);
-    if (!coupon) return setCouponError('❌ 查無此優惠碼');
-    if (!coupon.active) return setCouponError('❌ 優惠碼已過期');
-    if (subtotal < coupon.minOrderAmount)
-      return setCouponError(`❌ 未達門檻 $${coupon.minOrderAmount}`);
+  const userCoupons = user?.coupons || [];
+  const couponOptions = INITIAL_COUPONS.filter((c) => userCoupons.includes(c.code));
 
-    onApplyCoupon(couponInput);
-    setCouponError('✅ 套用成功！');
+  const handleCoupon = (code?: string) => {
+    const targetCode = code || couponInput;
+    const coupon = INITIAL_COUPONS.find((c) => c.code === targetCode);
+
+    if (!coupon) {
+      setCouponError('❌ 查無此優惠碼');
+      return;
+    }
+    if (!coupon.active) {
+      setCouponError('❌ 優惠碼已過期');
+      return;
+    }
+    if (subtotal < coupon.minOrderAmount) {
+      setCouponError(`❌ 未達門檻 $${coupon.minOrderAmount}`);
+      return;
+    }
+
+    onApplyCoupon(targetCode);
+    setCouponError(`✅ 套用成功：${targetCode}`);
+    setCouponInput('');
     audioManager.playSuccess();
   };
 
@@ -73,10 +91,40 @@ export const CartStep: FC<CartStepProps> = ({
         className="coupon-section"
         style={{ marginTop: 20, padding: 15, background: '#f8f9fa', borderRadius: 8 }}
       >
+        <label style={{ fontSize: '0.9rem', color: '#666', marginBottom: 8, display: 'block' }}>
+          🎟️ 使用優惠券
+        </label>
+
+        {couponOptions.length > 0 && (
+          <div style={{ marginBottom: 12 }}>
+            <select
+              onChange={(e) => {
+                if (e.target.value) handleCoupon(e.target.value);
+              }}
+              style={{
+                width: '100%',
+                padding: '10px',
+                borderRadius: '4px',
+                border: '1px solid #2d6a4f44',
+                background: '#fff',
+              }}
+            >
+              <option value="">快速選擇您的優惠券...</option>
+              {couponOptions.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.code === 'FREESHIP'
+                    ? '🚚 免運券'
+                    : `$${c.value} 折抵 (滿$${c.minOrderAmount})`}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div style={{ display: 'flex', gap: 10 }}>
           <input
             type="text"
-            placeholder="輸入優惠碼"
+            placeholder="或手動輸入代碼"
             value={couponInput}
             onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
             style={{ flex: 1, padding: 8, border: '1px solid #ddd', borderRadius: 4 }}
@@ -84,7 +132,7 @@ export const CartStep: FC<CartStepProps> = ({
           <button
             className="qty-btn"
             style={{ width: 'auto', padding: '0 15px' }}
-            onClick={handleCoupon}
+            onClick={() => handleCoupon()}
           >
             套用
           </button>

@@ -5,6 +5,7 @@ import { ProfileMenu } from '../atoms/ProfileMenu';
 import { ProfileSettings } from '../atoms/ProfileSettings';
 import { MembershipTiers } from '../atoms/MembershipTiers';
 import { ForgotPasswordForm } from '../atoms/ForgotPasswordForm';
+import { CouponList } from '../atoms/CouponList';
 
 interface AuthModalProps {
   type: 'login' | 'profile' | null;
@@ -17,7 +18,7 @@ interface AuthModalProps {
  */
 const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
   const { user, logout, updateUserData, resetPassword } = useAppContext();
-  const [view, setView] = useState<'menu' | 'settings' | 'tiers' | 'forgot'>('menu');
+  const [view, setView] = useState<'menu' | 'settings' | 'tiers' | 'forgot' | 'coupons'>('menu');
 
   if (!type) return null;
 
@@ -49,6 +50,7 @@ const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
                 }}
                 onViewTiers={() => setView('tiers')}
                 onViewSettings={() => setView('settings')}
+                onViewCoupons={() => setView('coupons')}
               />
             )}
 
@@ -61,6 +63,8 @@ const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
             )}
 
             {view === 'tiers' && <MembershipTiers onBack={() => setView('menu')} />}
+
+            {view === 'coupons' && <CouponList user={user} onBack={() => setView('menu')} />}
           </>
         )}
 

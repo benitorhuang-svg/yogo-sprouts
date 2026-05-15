@@ -19,6 +19,7 @@ export interface User {
   photoURL?: string;
   phone?: string;
   address?: string;
+  coupons?: string[];
 }
 
 /**
@@ -52,6 +53,7 @@ export const useAuth = (showToast: (msg: string) => void) => {
               points: prev?.points || 0,
               phone: prev?.phone || '',
               address: prev?.address || '',
+              coupons: prev?.coupons || ['YOGO2026', 'SPROUT80', 'FREESHIP'],
             };
             if (firebaseUser.photoURL) temp.photoURL = firebaseUser.photoURL;
             return temp;
@@ -65,6 +67,7 @@ export const useAuth = (showToast: (msg: string) => void) => {
             userData = snap.data() as User;
             if (!userData.photoURL && firebaseUser.photoURL)
               userData.photoURL = firebaseUser.photoURL;
+            if (!userData.coupons) userData.coupons = ['YOGO2026', 'SPROUT80', 'FREESHIP'];
           } else {
             userData = {
               name: firebaseUser.displayName || '新芽農',
@@ -73,6 +76,7 @@ export const useAuth = (showToast: (msg: string) => void) => {
               points: 0,
               phone: '',
               address: '',
+              coupons: ['YOGO2026', 'SPROUT80', 'FREESHIP'],
             };
             if (firebaseUser.photoURL) userData.photoURL = firebaseUser.photoURL;
             await setDoc(userRef, {
@@ -134,6 +138,7 @@ export const useAuth = (showToast: (msg: string) => void) => {
           tier: '🌱 訪客體驗',
           points: 0,
           photoURL: 'https://cdn-icons-png.flaticon.com/512/3069/3069172.png',
+          coupons: ['YOGO2026', 'SPROUT80', 'FREESHIP'],
         };
         setUser(guest);
         localStorage.setItem('yogo-user-profile', JSON.stringify(guest));

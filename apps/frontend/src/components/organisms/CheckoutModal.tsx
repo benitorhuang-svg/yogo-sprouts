@@ -98,6 +98,7 @@ const CheckoutModal: FC = () => {
               products={products}
               subtotal={subtotal}
               discount={discount}
+              user={user}
               onAddToCart={addToCart}
               onRemoveFromCart={removeFromCart}
               onApplyCoupon={setAppliedCoupon}
