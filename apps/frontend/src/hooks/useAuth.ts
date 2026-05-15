@@ -48,6 +48,7 @@ export const useAuth = (showToast: (msg: string) => void) => {
 
     // 2. 監聽 Firebase Auth 狀態
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      console.log('🔍 Auth State Changed:', firebaseUser?.uid);
       if (firebaseUser) {
         try {
           // 🚀 樂觀更新：先用 Auth 資料顯示，消除延遲
@@ -71,10 +72,12 @@ export const useAuth = (showToast: (msg: string) => void) => {
           let userData: User;
           if (snap.exists()) {
             userData = snap.data() as User;
+            console.log('✅ Found Firestore User Data:', userData.name);
             if (!userData.photoURL && firebaseUser.photoURL)
               userData.photoURL = firebaseUser.photoURL;
             if (!userData.coupons) userData.coupons = ['YOGO2026', 'SPROUT80', 'FREESHIP'];
           } else {
+            console.log('🆕 Creating New Firestore User for:', firebaseUser.uid);
             userData = {
               name: firebaseUser.displayName || '新芽農',
               email: firebaseUser.email || '',
@@ -95,15 +98,24 @@ export const useAuth = (showToast: (msg: string) => void) => {
           setUser(userData);
           localStorage.setItem('yogo-user-profile', JSON.stringify(userData));
         } catch (err) {
-          console.error('Auth Sync Error:', err);
+          console.error('❌ Auth Sync Error:', err);
           showToast('⚠️ 無法同步會員資料');
         }
       } else {
+        console.log('👋 User is logged out');
         // 清除快取 (排除訪客模式)
         const currentCached = localStorage.getItem('yogo-user-profile');
-        if (currentCached && !JSON.parse(currentCached).email.includes('guest')) {
-          setUser(null);
-          localStorage.removeItem('yogo-user-profile');
+        if (currentCached) {
+          try {
+            const parsed = JSON.parse(currentCached);
+            if (!parsed.email || !parsed.email.includes('guest')) {
+              setUser(null);
+              localStorage.removeItem('yogo-user-profile');
+            }
+          } catch {
+            setUser(null);
+            localStorage.removeItem('yogo-user-profile');
+          }
         }
       }
     });
@@ -120,6 +132,7 @@ export const useAuth = (showToast: (msg: string) => void) => {
     if (code) {
       const handleLineCallback = async () => {
         try {
+          console.log('🚀 Handling LINE Callback with code:', code.substring(0, 5) + '...');
           const savedState = sessionStorage.getItem('line-auth-state');
           if (savedState && returnedState !== savedState) {
             throw new Error('狀態碼不符，可能存在 CSRF 攻擊');
@@ -128,10 +141,14 @@ export const useAuth = (showToast: (msg: string) => void) => {
 
           showToast('🔄 正在驗證 LINE 登入資訊...');
 
-          const API_BASE =
-            window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-              ? 'https://us-central1-yogo-sprouts-app.cloudfunctions.net/api'
-              : '/api';
+          // 自動偵測 API 基礎路徑
+          const isLocal =
+            window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+          const API_BASE = isLocal
+            ? 'http://localhost:5001/yogo-sprouts-app/us-central1/api' // 指向本地 Emulator 或本地 Server
+            : '/api';
+
+          console.log('📡 Fetching LINE custom token from:', API_BASE);
 
           const response = await fetch(`${API_BASE}/auth/line`, {
             method: 'POST',
@@ -142,19 +159,23 @@ export const useAuth = (showToast: (msg: string) => void) => {
             }),
           });
 
-          if (!response.ok) throw new Error('LINE 登入授權失敗');
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `HTTP ${response.status} 錯誤`);
+          }
 
           const data = await response.json();
           if (data.customToken) {
+            console.log('🔑 Received Custom Token, signing in...');
             await signInWithCustomToken(auth, data.customToken);
             window.history.replaceState({}, document.title, '/');
             showToast('✅ LINE 登入成功！');
           } else {
-            throw new Error('未收到授權憑證');
+            throw new Error('伺服器回傳資料格式不正確');
           }
         } catch (err: any) {
-          console.error('LINE Callback Error:', err);
-          showToast(`❌ LINE 登入錯誤: ${err.message}`);
+          console.error('❌ LINE Callback Error:', err);
+          showToast(`❌ LINE 登入失敗: ${err.message}`);
           window.history.replaceState({}, document.title, '/');
         }
       };
