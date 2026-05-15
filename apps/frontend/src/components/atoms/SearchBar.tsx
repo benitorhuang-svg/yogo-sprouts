@@ -1,7 +1,11 @@
-import { FC } from 'react';
+import React, { FC } from 'react';
 import { useAppContext } from '@/context/AppContext';
 
-const SearchBar: FC = () => {
+/**
+ * 🔍 SearchBar Component
+ * 處理全域商品搜尋與快速清空功能
+ */
+export const SearchBar: FC = () => {
   const { searchQuery, setSearchQuery } = useAppContext();
 
   return (
@@ -13,7 +17,6 @@ const SearchBar: FC = () => {
       </span>
       <input
         type="text"
-        id="search-input"
         placeholder=" 搜尋商品名稱、規格或描述..."
         className="search-input"
         autoComplete="off"
@@ -22,7 +25,6 @@ const SearchBar: FC = () => {
       />
       {searchQuery && (
         <button
-          id="search-clear-btn"
           className="search-clear-btn"
           aria-label="清空搜尋"
           onClick={() => setSearchQuery('')}
@@ -33,5 +35,3 @@ const SearchBar: FC = () => {
     </div>
   );
 };
-
-export default SearchBar;

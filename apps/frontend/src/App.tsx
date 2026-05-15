@@ -1,18 +1,22 @@
 import React, { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppProvider } from '@/context/AppContext';
-import Header from '@/components/Header';
-import AnnouncementBar from '@/components/AnnouncementBar';
-import CategoryTabs from '@/components/CategoryTabs';
-import ProductList from '@/components/ProductList';
-import CartBar from '@/components/CartBar';
 import { audioManager } from '@/audioManager';
 
-import ProductDetailModal from '@/components/ProductDetailModal';
-import CheckoutModal from '@/components/CheckoutModal';
+// Atomic Design Components
+import MainLayout from '@/components/templates/MainLayout';
+import CategoryTabs from '@/components/organisms/CategoryTabs';
+import ProductList from '@/components/organisms/ProductList';
+import CartBar from '@/components/organisms/CartBar';
+import ProductDetailModal from '@/components/organisms/ProductDetailModal';
+import CheckoutModal from '@/components/organisms/CheckoutModal';
 
 const queryClient = new QueryClient();
 
+/**
+ * 🏛️ App (Orchestrator)
+ * 網站入口，負責 Provider 配置與頁面組合
+ */
 function App() {
   useEffect(() => {
     audioManager.initBgmAutoplay();
@@ -21,13 +25,13 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AppProvider>
-        <Header />
-        <AnnouncementBar />
-        <CategoryTabs />
-        <ProductList />
-        <CartBar />
-        <ProductDetailModal />
-        <CheckoutModal />
+        <MainLayout>
+          <CategoryTabs />
+          <ProductList />
+          <CartBar />
+          <ProductDetailModal />
+          <CheckoutModal />
+        </MainLayout>
       </AppProvider>
     </QueryClientProvider>
   );

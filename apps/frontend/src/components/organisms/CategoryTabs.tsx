@@ -1,8 +1,15 @@
 import { FC } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { audioManager } from '@/audioManager';
-import SearchBar from '@/components/SearchBar';
 
+// Atomic Components
+import { TabItem } from '../atoms/TabItem';
+import { SearchBar } from '../atoms/SearchBar';
+
+/**
+ * 🏛️ CategoryTabs (Switcher / 指揮官)
+ * 負責分類選單的導覽切換與搜尋列的佈局組合
+ */
 const CategoryTabs: FC = () => {
   const { categories, selectedCategory, setSelectedCategory } = useAppContext();
 
@@ -15,14 +22,13 @@ const CategoryTabs: FC = () => {
     <div className="category-tabs-container">
       <div className="category-tabs">
         {categories.map((cat) => (
-          <button
+          <TabItem
             key={cat.id}
-            id={cat.id === 'favorites' ? 'favorites-tab-btn' : undefined}
-            className={`tab-btn ${selectedCategory === cat.id ? 'active' : ''}`}
-            onClick={() => handleSelect(cat.id)}
-          >
-            {cat.label}
-          </button>
+            id={cat.id}
+            label={cat.label}
+            isActive={selectedCategory === cat.id}
+            onClick={handleSelect}
+          />
         ))}
       </div>
       <div className="category-search-wrapper">
