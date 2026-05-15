@@ -21,3 +21,25 @@ export const verifyAuthToken = async (req: Request, res: Response, next: NextFun
 
   return next();
 };
+
+/**
+ * 👮 Admin Middleware
+ * 嚴格限制僅限 admin@yogo.tw 存取
+ */
+export const verifyAdmin = async (req: Request, res: Response, next: NextFunction) => {
+  const user = (req as any).user;
+
+  if (!user || !user.uid) {
+    return res.status(401).json({ success: false, error: '請先登入後台' });
+  }
+
+  try {
+    const adminUser = await admin.auth().getUser(user.uid);
+    if (adminUser.email === 'admin@yogo.tw') {
+      return next();
+    }
+    return res.status(403).json({ success: false, error: '權限不足，僅限管理員存取' });
+  } catch {
+    return res.status(500).json({ success: false, error: '管理員身份驗證失敗' });
+  }
+};

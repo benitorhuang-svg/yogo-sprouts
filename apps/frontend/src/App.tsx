@@ -10,6 +10,7 @@ import ProductList from '@/components/organisms/ProductList';
 import CartBar from '@/components/organisms/CartBar';
 import ProductDetailModal from '@/components/organisms/ProductDetailModal';
 import CheckoutModal from '@/components/organisms/CheckoutModal';
+import AdminDashboard from '@/components/organisms/AdminDashboard';
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ function App() {
           <CartBar />
           <ProductDetailModal />
           <CheckoutModal />
+          <AdminDashboard />
         </MainLayout>
       </AppProvider>
     </QueryClientProvider>

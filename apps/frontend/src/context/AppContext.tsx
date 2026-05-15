@@ -41,6 +41,8 @@ interface AppContextType {
   setAppliedCoupon: (code: string) => void;
   isCheckoutOpen: boolean;
   setIsCheckoutOpen: (open: boolean) => void;
+  isAdminDashboardOpen: boolean;
+  setIsAdminDashboardOpen: (open: boolean) => void;
   showToast: (message: string) => void;
   toasts: { id: number; message: string }[];
 }
@@ -80,6 +82,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [favorites, setFavorites] = useState<number[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState<boolean>(false);
+  const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState<boolean>(false);
 
   // 3. 收藏邏輯 (簡單，暫留)
   const toggleFavorite = (productId: number) => {
@@ -121,6 +124,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setAppliedCoupon,
       isCheckoutOpen,
       setIsCheckoutOpen,
+      isAdminDashboardOpen,
+      setIsAdminDashboardOpen,
       showToast,
       toasts,
     }),
@@ -135,6 +140,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       selectedProduct,
       appliedCoupon,
       isCheckoutOpen,
+      isAdminDashboardOpen,
       toasts,
       showToast,
       login,

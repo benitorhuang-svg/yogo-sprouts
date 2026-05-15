@@ -7,6 +7,7 @@ interface ProfileMenuProps {
   onViewTiers: () => void;
   onViewSettings: () => void;
   onViewCoupons: () => void;
+  onOpenAdmin: () => void;
 }
 
 /**
@@ -19,7 +20,10 @@ export const ProfileMenu: FC<ProfileMenuProps> = ({
   onViewTiers,
   onViewSettings,
   onViewCoupons,
+  onOpenAdmin,
 }) => {
+  const isAdmin = user.email === 'admin@yogo.tw';
+
   return (
     <div className="auth-modal-content">
       <div className="profile-header">
@@ -49,6 +53,15 @@ export const ProfileMenu: FC<ProfileMenuProps> = ({
       </div>
 
       <div className="profile-menu">
+        {isAdmin && (
+          <div
+            className="menu-item admin-link"
+            onClick={onOpenAdmin}
+            style={{ color: '#2d6a4f', fontWeight: 'bold', background: '#2d6a4f11' }}
+          >
+            👑 進入後台管理系統
+          </div>
+        )}
         <div className="menu-item" onClick={onViewTiers}>
           🏆 會員等級與晉升藍圖
         </div>

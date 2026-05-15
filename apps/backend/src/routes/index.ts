@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import authRoutes from './auth.routes';
+import adminRoutes from './admin.routes';
 import { OrderController } from '../controllers/order.controller';
 import { verifyAuthToken } from '../middlewares/auth.middleware';
 import rateLimit from 'express-rate-limit';
@@ -17,6 +18,7 @@ const checkoutLimiter = rateLimit({
 
 // 模組化路由
 router.use('/auth', authRoutes);
+router.use('/admin', adminRoutes);
 
 // 核心業務路由
 router.post('/checkout', checkoutLimiter, verifyAuthToken, OrderController.checkout);

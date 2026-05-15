@@ -17,7 +17,7 @@ interface AuthModalProps {
  * 負責根據 type 與 view 狀態切換子組件，維持 Modal 的開啟生命週期
  */
 const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
-  const { user, logout, updateUserData, resetPassword } = useAppContext();
+  const { user, logout, updateUserData, resetPassword, setIsAdminDashboardOpen } = useAppContext();
   const [view, setView] = useState<'menu' | 'settings' | 'tiers' | 'forgot' | 'coupons'>('menu');
 
   if (!type) return null;
@@ -51,6 +51,10 @@ const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
                 onViewTiers={() => setView('tiers')}
                 onViewSettings={() => setView('settings')}
                 onViewCoupons={() => setView('coupons')}
+                onOpenAdmin={() => {
+                  setIsAdminDashboardOpen(true);
+                  onClose();
+                }}
               />
             )}
 
