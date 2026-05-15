@@ -44,28 +44,35 @@ const AdminDashboard: FC = () => {
     }
   };
 
-  // 更新商品欄位 (庫存或價格)
-  const handleUpdateProduct = async (
-    id: string | number,
-    field: 'stock' | 'price',
-    newValue: number
-  ) => {
-    // 樂觀更新 UI
+  // 更新本地 UI 狀態 (不發送請求)
+  const handleLocalUpdate = (id: string | number, field: 'stock' | 'price', newValue: number) => {
     setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, [field]: newValue } : p)));
+  };
 
+  // 真正儲存至資料庫
+  const handleSaveProduct = async (product: any) => {
     try {
       const token = await auth.currentUser?.getIdToken();
-      await fetch(`${API_BASE}/admin/products/${id}`, {
+      const res = await fetch(`${API_BASE}/admin/products/${product.id}`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ [field]: newValue }),
+        body: JSON.stringify({
+          stock: product.stock,
+          price: product.price,
+        }),
       });
-    } catch (err) {
-      console.error(`Update ${field} Error:`, err);
-      showToast(`❌ ${field === 'stock' ? '庫存' : '售價'}同步失敗`);
+      const data = await res.json();
+      if (data.success) {
+        showToast(`✅ 商品 #${product.id} 更新成功`);
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (err: any) {
+      console.error(`Save Product Error:`, err);
+      showToast(`❌ 更新失敗: ${err.message}`);
     }
   };
 
@@ -259,7 +266,7 @@ const AdminDashboard: FC = () => {
                               <div className="stock-control-group price-control">
                                 <button
                                   onClick={() =>
-                                    handleUpdateProduct(p.id, 'price', Math.max(0, p.price - 10))
+                                    handleLocalUpdate(p.id, 'price', Math.max(0, p.price - 10))
                                   }
                                 >
                                   −
@@ -270,7 +277,7 @@ const AdminDashboard: FC = () => {
                                     type="number"
                                     value={p.price}
                                     onChange={(e) =>
-                                      handleUpdateProduct(
+                                      handleLocalUpdate(
                                         p.id,
                                         'price',
                                         parseInt(e.target.value) || 0
@@ -279,7 +286,7 @@ const AdminDashboard: FC = () => {
                                   />
                                 </div>
                                 <button
-                                  onClick={() => handleUpdateProduct(p.id, 'price', p.price + 10)}
+                                  onClick={() => handleLocalUpdate(p.id, 'price', p.price + 10)}
                                 >
                                   +
                                 </button>
@@ -289,7 +296,7 @@ const AdminDashboard: FC = () => {
                               <div className="stock-control-group">
                                 <button
                                   onClick={() =>
-                                    handleUpdateProduct(p.id, 'stock', Math.max(0, p.stock - 1))
+                                    handleLocalUpdate(p.id, 'stock', Math.max(0, p.stock - 1))
                                   }
                                 >
                                   −
@@ -298,28 +305,29 @@ const AdminDashboard: FC = () => {
                                   type="number"
                                   value={p.stock}
                                   onChange={(e) =>
-                                    handleUpdateProduct(
-                                      p.id,
-                                      'stock',
-                                      parseInt(e.target.value) || 0
-                                    )
+                                    handleLocalUpdate(p.id, 'stock', parseInt(e.target.value) || 0)
                                   }
                                 />
                                 <button
-                                  onClick={() => handleUpdateProduct(p.id, 'stock', p.stock + 1)}
+                                  onClick={() => handleLocalUpdate(p.id, 'stock', p.stock + 1)}
                                 >
                                   +
                                 </button>
                               </div>
                             </td>
-                            <td>
-                              {p.stock === 0 ? (
-                                <span style={{ color: '#ef4444', fontWeight: 'bold' }}>完售</span>
-                              ) : p.stock < 10 ? (
-                                <span style={{ color: '#f59e0b' }}>低庫存</span>
-                              ) : (
-                                <span style={{ color: '#10b981' }}>充足</span>
-                              )}
+                            <td style={{ textAlign: 'center' }}>
+                              <button
+                                className="quick-btn-small"
+                                onClick={() => handleSaveProduct(p)}
+                                style={{
+                                  background: '#2d6a4f',
+                                  color: '#fff',
+                                  border: 'none',
+                                  padding: '6px 15px',
+                                }}
+                              >
+                                更新
+                              </button>
                             </td>
                           </tr>
                         ))}
