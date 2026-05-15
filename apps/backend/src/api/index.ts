@@ -101,11 +101,17 @@ const checkoutLimiter = rateLimit({
 });
 
 app.post('/seed', async (req, res) => {
+  const apiKey = req.headers['x-api-key'];
+  // 🛡️ 安全機制：保護 /seed 端點，防止惡意使用者清空或重置生產環境資料庫
+  if (!apiKey || apiKey !== (process.env.ADMIN_API_KEY || 'yogo-secret-admin-key-2026')) {
+    return res.status(403).json({ success: false, error: '權限不足 (Unauthorized)' });
+  }
+
   try {
     await forceSeed(db);
-    res.status(200).json({ success: true, message: 'Database successfully seeded!' });
+    return res.status(200).json({ success: true, message: 'Database successfully seeded!' });
   } catch (err) {
-    res
+    return res
       .status(500)
       .json({ success: false, error: err instanceof Error ? err.message : String(err) });
   }
@@ -161,7 +167,35 @@ app.post('/checkout', checkoutLimiter, async (req, res) => {
       .json({ success: false, error: '資料驗證失敗', details: validation.error.format() });
   }
 
-  const { customer, cart, couponCode, preferred_delivery_date, user_uid } = validation.data;
+  const {
+    customer,
+    cart,
+    couponCode,
+    preferred_delivery_date,
+    user_uid: clientUid,
+  } = validation.data;
+
+  // 🛡️ 安全機制：驗證 Firebase Auth ID Token (JWT) 以防偽造 user_uid
+  let verifiedUid: string | null = null;
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split('Bearer ')[1];
+    try {
+      const decodedToken = await admin.auth().verifyIdToken(token);
+      verifiedUid = decodedToken.uid;
+    } catch {
+      return res.status(401).json({ success: false, error: '無效的登入憑證 (Invalid Token)' });
+    }
+  }
+
+  // 確保如果前端有傳 user_uid，必須和驗證過的 token 相符 (訪客模式 verifiedUid 為 null，但 clientUid 會是 undefined)
+  if (clientUid && clientUid !== verifiedUid) {
+    return res
+      .status(403)
+      .json({ success: false, error: '權限異常：帳號身分不符 (Spoofing Detected)' });
+  }
+
+  const finalUserUid = verifiedUid;
 
   if (Object.keys(cart).length === 0) {
     return res.status(400).json({ success: false, error: '購物車為空，無法結帳！' });
@@ -250,7 +284,7 @@ app.post('/checkout', checkoutLimiter, async (req, res) => {
       const orderId = `#ORD-${todayStr}-${String(ordersSnapshot.size + 1).padStart(3, '0')}`;
       const finalPrice = Math.max(0, calculatedTotal - discountAmount);
       const orderData = {
-        user_uid: user_uid || null,
+        user_uid: finalUserUid || null,
         cust_name: customer.name,
         cust_phone: customer.phone,
         cust_contact: customer.contact,
