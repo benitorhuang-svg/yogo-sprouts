@@ -12,7 +12,7 @@ import { UserAuthSection } from '../molecules/UserAuthSection';
  * 負責網站頂部導覽佈局、主題切換與 Auth Modal 的開啟
  */
 const Header: FC = () => {
-  const { user } = useAppContext();
+  const { user, prewarm } = useAppContext();
   const [authModalType, setAuthModalType] = useState<'login' | 'profile' | null>(null);
   const [isDark, setIsDark] = useState(() => localStorage.getItem('theme') === 'dark');
 
@@ -52,6 +52,7 @@ const Header: FC = () => {
           <UserAuthSection
             user={user}
             onOpenAuth={(type: 'login' | 'profile') => setAuthModalType(type)}
+            onPrewarm={prewarm}
           />
         </nav>
       </div>

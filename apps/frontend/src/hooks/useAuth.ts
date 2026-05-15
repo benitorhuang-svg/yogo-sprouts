@@ -255,5 +255,14 @@ export const useAuth = (showToast: (msg: string) => void) => {
     showToast('📧 密碼重設信件已寄出');
   };
 
-  return { user, login, logout, updateUserData, resetPassword };
+  const prewarm = () => {
+    const isLocal =
+      window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const API_BASE = isLocal ? 'http://localhost:5001/yogo-sprouts-app/us-central1/api' : '/api';
+
+    // 悄悄地發送一個 GET 請求，只是為了喚醒 Cloud Functions
+    fetch(`${API_BASE}/health`).catch(() => {});
+  };
+
+  return { user, login, logout, updateUserData, resetPassword, prewarm };
 };

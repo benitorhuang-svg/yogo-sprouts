@@ -4,13 +4,26 @@ import { User } from '../../hooks/useAuth';
 interface UserAuthSectionProps {
   user: User | null;
   onOpenAuth: (type: 'login' | 'profile') => void;
+  onPrewarm?: () => void;
 }
 
 /**
  * 👤 UserAuthSection Component
  * 處理 Header 中的登入按鈕與會員頭貼展示
  */
-export const UserAuthSection: FC<UserAuthSectionProps> = ({ user, onOpenAuth }) => {
+export const UserAuthSection: FC<UserAuthSectionProps> = ({ user, onOpenAuth, onPrewarm }) => {
+  // 檢查是否正在執行 LINE Callback (URL 有 code)
+  const isLineCallback = window.location.search.includes('code=');
+
+  if (isLineCallback && !user) {
+    return (
+      <button className="auth-nav-btn login-btn skeleton-btn" style={{ minWidth: '120px' }}>
+        <span className="spinner-small" style={{ marginRight: '8px' }}></span>
+        驗證中...
+      </button>
+    );
+  }
+
   if (user) {
     return (
       <button
@@ -55,7 +68,11 @@ export const UserAuthSection: FC<UserAuthSectionProps> = ({ user, onOpenAuth }) 
   }
 
   return (
-    <button className="auth-nav-btn login-btn" onClick={() => onOpenAuth('login')}>
+    <button
+      className="auth-nav-btn login-btn"
+      onClick={() => onOpenAuth('login')}
+      onMouseEnter={onPrewarm}
+    >
       👤 會員登入
     </button>
   );

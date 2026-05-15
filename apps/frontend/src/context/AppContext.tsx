@@ -31,6 +31,7 @@ interface AppContextType {
   logout: () => void;
   updateUserData: (data: Partial<User>) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  prewarm: () => void;
   getTotal: () => number;
   getDiscount: () => number;
   isLoadingProducts: boolean;
@@ -54,7 +55,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // 1. 原子化狀態 Hooks
   const { toasts, showToast } = useToasts();
   const { products, isLoadingProducts } = useProducts();
-  const { user, login, logout, updateUserData, resetPassword } = useAuth(showToast);
+  const { user, login, logout, updateUserData, resetPassword, prewarm } = useAuth(showToast);
 
   const API_BASE =
     window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -110,6 +111,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       logout,
       updateUserData,
       resetPassword,
+      prewarm,
       getTotal,
       getDiscount,
       isLoadingProducts,
@@ -139,6 +141,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       logout,
       updateUserData,
       resetPassword,
+      prewarm,
       addToCart,
       removeFromCart,
       clearCart,

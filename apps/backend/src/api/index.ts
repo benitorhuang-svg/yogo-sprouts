@@ -9,6 +9,9 @@ const app = express();
 app.use(cors({ origin: true }));
 app.use(express.json());
 
+// 0. 健康檢查 (用於 Pre-warming 喚醒 Cold Start)
+app.get('/health', (req, res) => res.status(200).send('OK'));
+
 // 2. 路徑正規化 (處理 Hosting Rewrite 與 Function 直接呼叫的差異)
 app.use((req, res, next) => {
   if (req.url.startsWith('/api/')) {
