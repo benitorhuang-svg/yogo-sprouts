@@ -61,12 +61,27 @@ related: [PRD-product-catalog, PRD-business-rules, DES-design-system, DES-archit
 
 ---
 
-## 5. 全域輔助系統 (Global Utilities)
+## 6. 身分驗證模組 (Auth Modal & Security)
+
+- **組件**：`apps/frontend/src/components/AuthModal.tsx`
+- **狀態管理**：`AppContext.user`, `AppContext.login`, `AppContext.logout`
+- **觸發**：Header 的「會員登入」或「個人資料」按鈕。
+
+### 核心功能
+
+- **社群登入與防抖**：支援 Google 與 LINE 登入。所有按鈕具備 `isLoading` 防抖機制，防止連點產生 Race Condition。
+- **樂觀更新 (Optimistic UI)**：`onAuthStateChanged` 觸發時，優先擷取 Auth 提供的姓名與頭貼 (`photoURL`) 渲染 Header，消除資料庫存取延遲。
+- **防範 OAuth CSRF**：跳轉 LINE 登入前將 `state` 存入 `sessionStorage`，Callback 時嚴格比對，防範偽造請求。
+- **個人資料管理**：整合忘記密碼 (Password Reset) 流程，並支援在「設定」頁籤中修改姓名，即時同步至 Firestore。
+
+---
+
+## 7. 全域輔助系統 (Global Utilities)
 
 | 模組     | 實作位置               | 職責                                                 |
 | -------- | ---------------------- | ---------------------------------------------------- |
-| 狀態中心 | `AppContext.tsx`       | 管理購物車、會員、彈窗、搜尋及優惠邏輯。             |
-| 吐司通知 | `AppContext.showToast` | 2.5 秒自動消失的動態通知組件。                       |
+| 狀態中心 | `AppContext.tsx`       | 管理購物車、Firebase Auth 驗證、會員快取及優惠邏輯。 |
+| 吐司通知 | `AppContext.showToast` | 3 秒自動消失的動態通知組件，並整合 API 錯誤訊息。    |
 | 音效管理 | `audioManager.ts`      | 處理加入購物車、切換分類及操作成功之音效。           |
 | 資料層   | `packages/shared`      | 定義商品主檔 (INITIAL_PRODUCTS) 與 TypeScript 介面。 |
 

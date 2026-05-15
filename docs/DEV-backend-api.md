@@ -66,7 +66,10 @@ Phase 2 採用 Firebase Cloud Functions + Firestore，取代 LocalStorage 前端
 ```json
 {
   "customer": { "name": "", "phone": "", "contact": "", "address": "" },
-  "cart": { "1": 2, "3": 1 }
+  "cart": { "1": 2, "3": 1 },
+  "couponCode": "YOGO2026",
+  "preferred_delivery_date": "2026-06-01",
+  "user_uid": "firebase_auth_uid"
 }
 ```
 
@@ -75,13 +78,31 @@ Phase 2 採用 Firebase Cloud Functions + Firestore，取代 LocalStorage 前端
 1. `BEGIN` → 鎖定商品文件
 2. 校驗庫存充足性
 3. 扣減 `stock`
-4. 寫入 `orders` (status: `"pending"`)
-5. `COMMIT` → 觸發 LINE Notify（見 [BIZ-order-lifecycle](./BIZ-order-lifecycle.md)）
+4. 計算優惠碼折扣
+5. 寫入 `orders` (綁定 `user_uid`, status: `"pending"`)
+6. `COMMIT` → 觸發 LINE Notify（見 [BIZ-order-lifecycle](./BIZ-order-lifecycle.md)）
 
 **回應**：
 
-- `200`: `{ "success": true, "message": "預購成功！" }`
+- `200`: `{ "success": true, "message": "結帳成功！", "orderId": "#ORD-20260515-001" }`
 - `400`: `{ "success": false, "error": "庫存不足..." }`
+
+### POST `/auth/line`
+
+**用途**：處理 LINE Login 的 OAuth 回調，交換存取權杖並簽發 Firebase Custom Token。
+
+**請求體**：
+
+```json
+{
+  "code": "line_authorization_code",
+  "redirectUri": "https://yogo-sprouts-app.web.app/"
+}
+```
+
+**回應**：
+
+- `200`: `{ "customToken": "firebase_custom_token" }`
 
 ---
 
@@ -93,10 +114,18 @@ service cloud.firestore {
   match /databases/{database}/documents {
     match /products/{productId} {
       allow read: if true;
+      allow write: if false; // 僅限後端操作庫存
+    }
+    match /coupons/{couponId} {
+      allow read: if true;
       allow write: if false;
     }
     match /orders/{orderId} {
-      allow read, write: if false;
+      allow create, update, delete: if false; // 強制經由 /checkout API
+      allow read: if request.auth != null && resource.data.user_uid == request.auth.uid;
+    }
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
