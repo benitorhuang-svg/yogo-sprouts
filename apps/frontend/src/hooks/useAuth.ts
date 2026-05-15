@@ -4,6 +4,7 @@ import {
   GoogleAuthProvider,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  signInWithCustomToken,
   signOut,
   onAuthStateChanged,
   sendPasswordResetEmail,
@@ -108,6 +109,57 @@ export const useAuth = (showToast: (msg: string) => void) => {
     });
 
     return () => unsubscribe();
+  }, [showToast]);
+
+  useEffect(() => {
+    // 處理 LINE Login Callback (如果 URL 有 code)
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const returnedState = urlParams.get('state');
+
+    if (code) {
+      const handleLineCallback = async () => {
+        try {
+          const savedState = sessionStorage.getItem('line-auth-state');
+          if (savedState && returnedState !== savedState) {
+            throw new Error('狀態碼不符，可能存在 CSRF 攻擊');
+          }
+          sessionStorage.removeItem('line-auth-state');
+
+          showToast('🔄 正在驗證 LINE 登入資訊...');
+
+          const API_BASE =
+            window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+              ? 'https://us-central1-yogo-sprouts-app.cloudfunctions.net/api'
+              : '/api';
+
+          const response = await fetch(`${API_BASE}/auth/line`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              code,
+              redirectUri: window.location.origin + '/',
+            }),
+          });
+
+          if (!response.ok) throw new Error('LINE 登入授權失敗');
+
+          const data = await response.json();
+          if (data.customToken) {
+            await signInWithCustomToken(auth, data.customToken);
+            window.history.replaceState({}, document.title, '/');
+            showToast('✅ LINE 登入成功！');
+          } else {
+            throw new Error('未收到授權憑證');
+          }
+        } catch (err: any) {
+          console.error('LINE Callback Error:', err);
+          showToast(`❌ LINE 登入錯誤: ${err.message}`);
+          window.history.replaceState({}, document.title, '/');
+        }
+      };
+      handleLineCallback();
+    }
   }, [showToast]);
 
   const login = async (
