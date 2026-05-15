@@ -14,7 +14,7 @@
   margin-right: 15px;
 }
 
-[data-theme="dark"] .music-player {
+[data-theme='dark'] .music-player {
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -43,8 +43,12 @@
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .player-controls {
@@ -65,7 +69,7 @@
   margin-left: 8px;
 }
 
-[data-theme="dark"] .player-title {
+[data-theme='dark'] .player-title {
   color: #f3f4f6;
 }
 
@@ -121,7 +125,7 @@
   height: 12px;
   border-radius: 50%;
   background: #ffffff;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   cursor: pointer;
   transition: transform 0.1s;
 }
@@ -130,11 +134,13 @@
   transform: scale(1.2);
 }
 
-.play-btn:hover, .control-btn:hover {
+.play-btn:hover,
+.control-btn:hover {
   transform: scale(1.1);
   opacity: 1;
 }
 
-.play-btn:active, .control-btn:active {
+.play-btn:active,
+.control-btn:active {
   transform: scale(0.95);
 }

@@ -31,29 +31,29 @@ stateDiagram-v2
 
 ### 狀態定義
 
-| 狀態 | 說明 |
-| :--- | :--- |
-| `pending` | 待確認 |
+| 狀態        | 說明       |
+| :---------- | :--------- |
+| `pending`   | 待確認     |
 | `confirmed` | 已確認接單 |
-| `quoted` | 已報價運費 |
-| `paid` | 已付款 |
-| `preparing` | 備貨中 |
-| `shipped` | 已出貨 |
-| `delivered` | 已送達 |
-| `cancelled` | 已取消 |
+| `quoted`    | 已報價運費 |
+| `paid`      | 已付款     |
+| `preparing` | 備貨中     |
+| `shipped`   | 已出貨     |
+| `delivered` | 已送達     |
+| `cancelled` | 已取消     |
 
 ---
 
 ## 2. 通知矩陣
 
-| 事件 | → 店家 | → 顧客 | 管道 |
-| :--- | :--- | :--- | :--- |
-| 新訂單 | 🔔 即時推播 | — | LINE Notify |
-| 確認接單 | — | 💬 通知 | LINE 私訊 |
-| 報價運費 | — | 💬 金額+匯款 | LINE 私訊 |
-| 收款確認 | 🔔 備貨提醒 | — | LINE Notify |
-| 出貨 | 🔔 記錄 | 💬 追蹤碼 | 雙方 |
-| 取消 | 🔔 記錄 | 💬 原因 | 雙方 |
+| 事件     | → 店家      | → 顧客       | 管道        |
+| :------- | :---------- | :----------- | :---------- |
+| 新訂單   | 🔔 即時推播 | —            | LINE Notify |
+| 確認接單 | —           | 💬 通知      | LINE 私訊   |
+| 報價運費 | —           | 💬 金額+匯款 | LINE 私訊   |
+| 收款確認 | 🔔 備貨提醒 | —            | LINE Notify |
+| 出貨     | 🔔 記錄     | 💬 追蹤碼    | 雙方        |
+| 取消     | 🔔 記錄     | 💬 原因      | 雙方        |
 
 ---
 
@@ -68,8 +68,10 @@ async function sendLineNotify(message: string): Promise<void> {
   const token = functions.config().line.notify_token;
   await fetch('https://notify-api.line.me/api/notify', {
     method: 'POST',
-    headers: { 'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/x-www-form-urlencoded' },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
     body: `message=${encodeURIComponent(message)}`,
   });
 }
@@ -87,9 +89,15 @@ export const onOrderStatusChange = functions.firestore
     const after = change.after.data();
     if (before.status === after.status) return;
     switch (after.status) {
-      case 'confirmed': await notifyCustomerConfirmed(after); break;
-      case 'shipped':   await notifyCustomerShipped(after); break;
-      case 'cancelled': await notifyBothCancelled(after); break;
+      case 'confirmed':
+        await notifyCustomerConfirmed(after);
+        break;
+      case 'shipped':
+        await notifyCustomerShipped(after);
+        break;
+      case 'cancelled':
+        await notifyBothCancelled(after);
+        break;
     }
   });
 ```

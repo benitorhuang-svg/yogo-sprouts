@@ -1,5 +1,5 @@
 ---
-title: 前端核心功能模組
+title: 前端核心功能模組 (React 版)
 code: DEV-frontend-modules
 sdlc: 開發實作 (Development)
 status: implemented
@@ -7,71 +7,69 @@ owner: frontend-engineer
 related: [PRD-product-catalog, PRD-business-rules, DES-design-system, DES-architecture]
 ---
 
-# 🟡 DEV — 前端核心功能模組
+# 🟡 DEV — 前端核心功能模組 (React 版)
 
-定義四大交互模組與輔助模組的實作規格、DOM 事件監聽及業務邏輯。
+定義四大交互模組與輔助模組在 React (Turborepo) 架構下的實作規格與業務邏輯。
 
 ---
 
-## 1. 商品詳情彈窗 (Detail Modal)
+## 1. 商品詳情彈窗 (Product Detail Modal)
 
-- **原始碼**：[src/detailModal.ts](file:///c:/Users/benit/Desktop/YoGo/src/detailModal.ts)
-- **掛載點**：`#product-detail-modal`
-- **觸發**：點擊商品卡片（非加減按鈕）
+- **組件**：`apps/frontend/src/components/ProductDetailModal.tsx`
+- **狀態管理**：`AppContext.selectedProduct`
+- **觸發**：點擊 `ProductCard.tsx`（非加減按鈕區域）
 
 ### 介面元素
-- **多圖輪播**：主圖 + 左右箭頭 + 底部縮圖列
-- **規格標籤**：動態顯示 `spec`、溫層標籤（冷藏藍/常溫綠）
-- **特色清單**：遍歷 `features[]` 渲染 Checkmark 列表
-- **物流提示**：「🚚 配送運費依溫層與材積裝箱，未達免運由專人報價」
-- **數量控制**：初始 1，最低 1，「加入購物籃」後累加至購物車 + Toast 通知
+
+- **多圖輪播**：支援主圖與 `detailImgs` 輪播，具備左右切換與縮圖導覽。
+- **LINE 一鍵分享**：整合 LINE URL Scheme，分享商品名稱、規格與當前網址。
+- **規格與特色**：動態渲染溫層標籤（冷藏/常溫）及 `features[]` 列表。
+- **數量控制**：獨立 Qty Selector，點擊「加入購物車」後觸發 Toast 通知。
 
 ---
 
 ## 2. 多階段結帳表單 (Checkout 4-Step)
 
-- **原始碼**：[src/checkoutModal.ts](file:///c:/Users/benit/Desktop/YoGo/src/checkoutModal.ts)
-- **掛載點**：`#checkout-modal`
-- **觸發**：底部「確認結帳」按鈕
+- **組件**：`apps/frontend/src/components/CheckoutModal.tsx`
+- **狀態管理**：`AppContext.isCheckoutOpen`
+- **觸發**：底部 `CartBar.tsx` 的「確認結帳」按鈕
 
-| 階段 | 內容 |
-|------|------|
-| **Step 1** | 列出品項明細（可調整數量）、冷藏/常溫分開計算免運門檻、顯示合計 |
-| **Step 2** | 必填表單：姓名、電話、LINE/Email、地址（前端驗證） |
-| **Step 3** | 防呆確認，按鈕 `disabled` 防重複，觸發 API |
-| **Step 4** | ✅ 成功通知，「完成並返回首頁」清空購物車 + 回頂 |
-
-### 免運判定邏輯（詳見 [PRD-business-rules](./PRD-business-rules.md)）
-- 冷藏小計 ≥ $2,000 → `✅ 已達冷藏免運`
-- 常溫小計 ≥ $800 → `✅ 已達常溫免運`
-- 兩者**獨立計算**
+| 階段       | 內容                                                                        |
+| ---------- | --------------------------------------------------------------------------- |
+| **Step 1** | **購物清單**：列出品項明細，支援優惠碼 (Coupon) 輸入與即時折抵計算。        |
+| **Step 2** | **配送資訊**：填寫姓名、電話、地址，並包含**希望配送日期選擇器** (Min+2d)。 |
+| **Step 3** | **防呆確認**：顯示最終彙整資訊，確認後送出訂單。                            |
+| **Step 4** | **✅ 成功通知**：顯示訂單編號、實付金額，並引導至金流模擬或首頁。           |
 
 ---
 
-## 3. 吸頂滾動偵測導覽 (ScrollSpy)
+## 3. 分類導覽與搜尋 (Category & Search)
 
-- **原始碼**：[src/scrollSpy.ts](file:///c:/Users/benit/Desktop/YoGo/src/scrollSpy.ts)
-
-1. **吸頂**：`.category-tabs` 加 `.sticky` class
-2. **ScrollSpy**：`requestAnimationFrame` 節流監聽 → 高亮對應按鈕 + 自動橫向滾動
-3. **平滑跳轉**：`scrollTo({ top, behavior: 'smooth' })`，扣除 header 高度 ~120px
+- **組件**：`CategoryTabs.tsx`, `SearchBar.tsx`
+- **邏輯**：
+  1. **即時搜尋**：監聽 `searchQuery` 狀態，同步過濾商品名稱、規格與特色內容。
+  2. **分類過濾**：點擊 Tabs 切換 `selectedCategory`，支援「全部」與「我的收藏」。
+  3. **ScrollSpy**：(待優化) 目前採用 React 狀態驅動的列表重繪。
 
 ---
 
 ## 4. 管理員隱藏入口 (Admin Trigger)
 
-- **原始碼**：[src/admin.ts](file:///c:/Users/benit/Desktop/YoGo/src/admin.ts)
-- **觸發**：Header Logo 2 秒內連點 5 次
-- **行為**：彈出密碼框（Phase 2 對接 Firebase Auth）
+- **組件**：`Header.tsx`
+- **觸發**：Header Logo 2 秒內連點 5 次。
+- **行為**：觸發密碼輸入框 (`yogo2026`)，驗證成功後導向後端管理介面。
 
 ---
 
-## 5. 輔助模組
+## 5. 全域輔助系統 (Global Utilities)
 
-| 模組 | 檔案 | 職責 |
-|------|------|------|
-| 商品渲染 | `src/shop.ts` | 渲染卡片、事件委派、售完遮罩 |
-| 購物車 | `src/cart.ts` | CartState 管理、底部 Bar 更新 |
-| 吐司通知 | `src/toast.ts` | 2.5 秒後自動淡出移除 |
-| 資料層 | `src/data.ts` | 商品主檔、localStorage 持久化 |
-| 入口 | `src/app.ts` | DOMContentLoaded 初始化串接 |
+| 模組     | 實作位置               | 職責                                                 |
+| -------- | ---------------------- | ---------------------------------------------------- |
+| 狀態中心 | `AppContext.tsx`       | 管理購物車、會員、彈窗、搜尋及優惠邏輯。             |
+| 吐司通知 | `AppContext.showToast` | 2.5 秒自動消失的動態通知組件。                       |
+| 音效管理 | `audioManager.ts`      | 處理加入購物車、切換分類及操作成功之音效。           |
+| 資料層   | `packages/shared`      | 定義商品主檔 (INITIAL_PRODUCTS) 與 TypeScript 介面。 |
+
+---
+
+_YoGo Sprout Workshop — 現代化架構，極致體驗_

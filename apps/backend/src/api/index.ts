@@ -1,12 +1,13 @@
 import express from 'express';
 import cors from 'cors';
-import rateLimit from 'express-rate-limit';
+import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import { Product, Coupon } from '@yogo/shared';
 import { seedDatabaseIfEmpty, forceSeed } from '../data/seeder';
-import { sendLineNotify } from '../services/notification.service';
+import { sendLineMessage } from '../services/notification.service';
 import { logger } from '../utils/logger';
 import { checkoutSchema, couponQuerySchema, paymentCreateSchema } from './schemas';
+import rateLimit from 'express-rate-limit';
 
 interface OrderItem {
   product_id: number;
@@ -24,6 +25,64 @@ const app = express();
 app.use(cors({ origin: true }));
 app.use(express.json());
 
+// LINE Login 驗證接口
+app.post('/api/auth/line', async (req, res) => {
+  const { code, redirectUri } = req.body;
+  const channelId = functions.config().line?.channel_id || process.env.LINE_CHANNEL_ID;
+  const channelSecret = functions.config().line?.channel_secret || process.env.LINE_CHANNEL_SECRET;
+
+  try {
+    // 1. 拿 code 向 LINE 交換 Access Token
+    const tokenResponse = await fetch('https://api.line.me/oauth2/v2.1/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: redirectUri,
+        client_id: channelId!,
+        client_secret: channelSecret!,
+      }),
+    });
+    const tokenData = await tokenResponse.json();
+
+    if (!tokenResponse.ok)
+      throw new Error(tokenData.error_description || 'LINE Token Exchange Failed');
+
+    // 2. 拿 Access Token 獲取用戶資料
+    const profileResponse = await fetch('https://api.line.me/v2/profile', {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` },
+    });
+    const profile = await profileResponse.json();
+
+    // 3. 建立或更新 Firebase 用戶，並生成 Custom Token
+    const uid = `line:${profile.userId}`;
+    await admin
+      .auth()
+      .updateUser(uid, {
+        displayName: profile.displayName,
+        photoURL: profile.pictureUrl,
+      })
+      .catch(async (error) => {
+        if (error.code === 'auth/user-not-found') {
+          return admin.auth().createUser({
+            uid,
+            displayName: profile.displayName,
+            photoURL: profile.pictureUrl,
+          });
+        }
+        throw error;
+      });
+
+    const customToken = await admin.auth().createCustomToken(uid);
+    res.json({ customToken, profile });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('LINE Login Error:', error);
+    res.status(500).json({ error: message });
+  }
+});
+
 const checkoutLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 5,
@@ -37,7 +96,9 @@ app.post('/seed', async (req, res) => {
     await forceSeed(db);
     res.status(200).json({ success: true, message: 'Database successfully seeded!' });
   } catch (err) {
-    res.status(500).json({ success: false, error: err instanceof Error ? err.message : String(err) });
+    res
+      .status(500)
+      .json({ success: false, error: err instanceof Error ? err.message : String(err) });
   }
 });
 
@@ -46,10 +107,12 @@ app.get('/products', async (req, res) => {
     await seedDatabaseIfEmpty(db);
     const snapshot = await db.collection('products').orderBy('id', 'asc').get();
     const products: Product[] = [];
-    snapshot.forEach(doc => products.push(doc.data() as Product));
+    snapshot.forEach((doc) => products.push(doc.data() as Product));
     res.status(200).json(products);
   } catch (err) {
-    res.status(500).json({ success: false, error: err instanceof Error ? err.message : String(err) });
+    res
+      .status(500)
+      .json({ success: false, error: err instanceof Error ? err.message : String(err) });
   }
 });
 
@@ -66,21 +129,27 @@ app.get('/coupon', async (req, res) => {
     if (!doc.exists) return res.status(404).json({ success: false, error: '無此優惠碼！' });
 
     const coupon = doc.data() as Coupon;
-    if (!coupon || !coupon.active) return res.status(400).json({ success: false, error: '此優惠碼已停用' });
+    if (!coupon || !coupon.active)
+      return res.status(400).json({ success: false, error: '此優惠碼已停用' });
 
     const expiresAt = new Date(coupon.expiresAt);
-    if (expiresAt.getTime() < Date.now()) return res.status(400).json({ success: false, error: '此優惠碼已過期！' });
+    if (expiresAt.getTime() < Date.now())
+      return res.status(400).json({ success: false, error: '此優惠碼已過期！' });
 
     return res.status(200).json({ success: true, coupon });
   } catch (err) {
-    return res.status(500).json({ success: false, error: err instanceof Error ? err.message : String(err) });
+    return res
+      .status(500)
+      .json({ success: false, error: err instanceof Error ? err.message : String(err) });
   }
 });
 
 app.post('/checkout', checkoutLimiter, async (req, res) => {
   const validation = checkoutSchema.safeParse(req.body);
   if (!validation.success) {
-    return res.status(400).json({ success: false, error: '資料驗證失敗', details: validation.error.format() });
+    return res
+      .status(400)
+      .json({ success: false, error: '資料驗證失敗', details: validation.error.format() });
   }
 
   const { customer, cart, couponCode, preferred_delivery_date } = validation.data;
@@ -95,12 +164,12 @@ app.post('/checkout', checkoutLimiter, async (req, res) => {
       timeZone: 'Asia/Taipei',
       year: 'numeric',
       month: '2-digit',
-      day: '2-digit'
+      day: '2-digit',
     }).format(now);
     const todayStr = taipeiDate.replace(/\//g, '');
     const startId = `#ORD-${todayStr}-000`;
     const endId = `#ORD-${todayStr}-999`;
-    
+
     let appliedCoupon: Coupon | null = null;
     if (couponCode) {
       const couponDoc = await db.collection('coupons').doc(couponCode.toUpperCase()).get();
@@ -127,18 +196,30 @@ app.post('/checkout', checkoutLimiter, async (req, res) => {
         if (!docSnap.exists) throw new Error(`商品 ID ${pid} 不存在！`);
 
         const pData = docSnap.data() as Product;
-        if (pData.stock < qty) throw new Error(`[${pData.name}] 庫存不足，剩餘 ${pData.stock} 件。`);
+        if (pData.stock < qty)
+          throw new Error(`[${pData.name}] 庫存不足，剩餘 ${pData.stock} 件。`);
 
         productDocs[pid] = docSnap;
         calculatedTotal += pData.price * qty;
-        itemDetails.push({ product_id: pid, name: pData.name, qty, price: pData.price, cold: pData.cold, emoji: pData.emoji, spec: pData.spec });
+        itemDetails.push({
+          product_id: pid,
+          name: pData.name,
+          qty,
+          price: pData.price,
+          cold: pData.cold,
+          emoji: pData.emoji,
+          spec: pData.spec,
+        });
       }
 
       if (itemDetails.length === 0) throw new Error('購物車無有效商品！');
 
       let discountAmount = 0;
       if (appliedCoupon && calculatedTotal >= appliedCoupon.minOrderAmount) {
-        discountAmount = appliedCoupon.type === 'fixed' ? appliedCoupon.value : Math.round(calculatedTotal * (appliedCoupon.value / 100));
+        discountAmount =
+          appliedCoupon.type === 'fixed'
+            ? appliedCoupon.value
+            : Math.round(calculatedTotal * (appliedCoupon.value / 100));
       }
 
       for (const pidStr of Object.keys(cart)) {
@@ -150,20 +231,40 @@ app.post('/checkout', checkoutLimiter, async (req, res) => {
         transaction.update(docSnap.ref, { stock: pData.stock - qty });
       }
 
-      const ordersSnapshot = await transaction.get(db.collection('orders').orderBy(admin.firestore.FieldPath.documentId()).startAt(startId).endAt(endId));
+      const ordersSnapshot = await transaction.get(
+        db
+          .collection('orders')
+          .orderBy(admin.firestore.FieldPath.documentId())
+          .startAt(startId)
+          .endAt(endId)
+      );
       const orderId = `#ORD-${todayStr}-${String(ordersSnapshot.size + 1).padStart(3, '0')}`;
       const finalPrice = Math.max(0, calculatedTotal - discountAmount);
       const orderData = {
-        cust_name: customer.name, cust_phone: customer.phone, cust_contact: customer.contact, cust_address: customer.address,
-        total_price: finalPrice, original_price: calculatedTotal, discount: discountAmount, coupon_code: appliedCoupon ? appliedCoupon.code : null,
-        shipping_fee: null, status: 'pending', tracking_number: null, created_at: admin.firestore.Timestamp.fromDate(now),
-        confirmed_at: null, shipped_at: null, preferred_delivery_date: preferred_delivery_date || null, items: itemDetails
+        cust_name: customer.name,
+        cust_phone: customer.phone,
+        cust_contact: customer.contact,
+        cust_address: customer.address,
+        total_price: finalPrice,
+        original_price: calculatedTotal,
+        discount: discountAmount,
+        coupon_code: appliedCoupon ? appliedCoupon.code : null,
+        shipping_fee: null,
+        status: 'pending',
+        tracking_number: null,
+        created_at: admin.firestore.Timestamp.fromDate(now),
+        confirmed_at: null,
+        shipped_at: null,
+        preferred_delivery_date: preferred_delivery_date || null,
+        items: itemDetails,
       };
       transaction.set(db.collection('orders').doc(orderId), orderData);
       return { orderId, orderData };
     });
 
-    const itemsMessage = result.orderData.items.map((item: OrderItem) => `• ${item.emoji} ${item.name} (${item.qty}件)`).join('\n');
+    const itemsMessage = result.orderData.items
+      .map((item: OrderItem) => `• ${item.emoji} ${item.name} (${item.qty}件)`)
+      .join('\n');
     const lineMsg = `
 🌱 YoGo 有夠菜 — 新預購訂單！
 ━━━━━━━━━━━━━━━━━━
@@ -176,10 +277,12 @@ ${itemsMessage}${result.orderData.coupon_code ? `\n🎫 優惠碼: ${result.orde
 💰 商品總計: $${result.orderData.total_price} 元 (運費待報價)
 `.trim();
 
-    await sendLineNotify(lineMsg);
+    await sendLineMessage(lineMsg);
     return res.status(200).json({ success: true, message: '預購成功！', orderId: result.orderId });
   } catch (err) {
-    return res.status(400).json({ success: false, error: err instanceof Error ? err.message : String(err) });
+    return res
+      .status(400)
+      .json({ success: false, error: err instanceof Error ? err.message : String(err) });
   }
 });
 
@@ -189,20 +292,23 @@ app.post('/payment/create', async (req, res) => {
     return res.status(400).json({ success: false, error: validation.error.issues[0].message });
   }
   const { orderId, amount } = validation.data;
-  
+
   try {
     const orderDoc = await db.collection('orders').doc(orderId).get();
     if (!orderDoc.exists) return res.status(404).json({ success: false, error: '找不到該訂單！' });
     const paymentUrl = `https://mock-payment-gateway.com/pay?orderId=${encodeURIComponent(orderId)}&amount=${Number(amount)}`;
     return res.status(200).json({ success: true, paymentUrl });
   } catch (err) {
-    return res.status(500).json({ success: false, error: err instanceof Error ? err.message : String(err) });
+    return res
+      .status(500)
+      .json({ success: false, error: err instanceof Error ? err.message : String(err) });
   }
 });
 
 app.post('/payment/callback', async (req, res) => {
   const { MerchantTradeNo, RtnCode, RtnMsg } = req.body;
-  if (!MerchantTradeNo) return res.status(400).send('Invalid webhook signature or empty parameters');
+  if (!MerchantTradeNo)
+    return res.status(400).send('Invalid webhook signature or empty parameters');
   try {
     const orderId = MerchantTradeNo;
     const orderRef = db.collection('orders').doc(orderId);

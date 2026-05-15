@@ -1,5 +1,5 @@
 import * as functions from 'firebase-functions';
-import { sendLineNotify } from '../services/notification.service';
+import { sendLineMessage } from '../services/notification.service';
 import { logger } from '../utils/logger';
 
 export const onOrderStatusChange = functions.firestore
@@ -11,7 +11,9 @@ export const onOrderStatusChange = functions.firestore
 
     if (!before || !after || before.status === after.status) return;
 
-    logger.info(`[Order Change] ${orderId} transitioned from '${before.status}' to '${after.status}'`);
+    logger.info(
+      `[Order Change] ${orderId} transitioned from '${before.status}' to '${after.status}'`
+    );
 
     let customerMsg = '';
     switch (after.status) {
@@ -54,7 +56,7 @@ export const onOrderStatusChange = functions.firestore
       狀態: 【收款確認，備貨中】
       說明: 我們已確認收到您的匯款！溫室人員正著手為您準備最新鮮的芽菜及相關商品，出貨時會再次通知您。
       `;
-        await sendLineNotify(`📦 [備貨提醒] 訂單 ${orderId} 顧客已完成付款！請立即安排備貨。`);
+        await sendLineMessage(`📦 [備貨提醒] 訂單 ${orderId} 顧客已完成付款！請立即安排備貨。`);
         break;
 
       case 'shipped': {
@@ -78,12 +80,39 @@ export const onOrderStatusChange = functions.firestore
 狀態: 【已取消】
 說明: 您的預購訂單 ${orderId} 已經取消。如有任何疑問，請隨時聯繫 YoGo 客服，謝謝您！
 `;
-        await sendLineNotify(`❌ [訂單取消] 訂單 ${orderId} 狀態已變更為已取消。`);
+        await sendLineMessage(`❌ [訂單取消] 訂單 ${orderId} 狀態已變更為已取消。`);
         break;
     }
 
     if (customerMsg) {
       logger.info({ customerMsg }, `[Customer Notification Send Mock]`);
-      await sendLineNotify(`📢 [狀態更新] 訂單 ${orderId} 狀態變更為【${after.status}】\n已對顧客發送通知訊息。`);
+      await sendLineMessage(
+        `📢 [狀態更新] 訂單 ${orderId} 狀態變更為【${after.status}】\n已對顧客發送通知訊息。`
+      );
     }
-    });
+  });
+
+export const onOrderCreated = functions.firestore
+  .document('orders/{orderId}')
+  .onCreate(async (snapshot, context) => {
+    const order = snapshot.data();
+    const orderId = context.params.orderId;
+    if (!order) return;
+
+    logger.info(`[New Order] ${orderId} created by ${order.user}`);
+
+    const message = `
+🎉 [新訂單通知] YoGo 芽菜工坊
+━━━━━━━━━━━━━━━━━━
+🆔 訂單編號: ${orderId}
+👤 顧客姓名: ${order.cust_name || order.user}
+📞 聯絡電話: ${order.cust_phone || '未提供'}
+📍 配送地址: ${order.cust_address || '未提供'}
+📅 希望日期: ${order.preferred_delivery_date || '未指定'}
+💰 訂單金額: $${order.total}
+🕒 下單時間: ${new Date(order.createdAt).toLocaleString('zh-TW')}
+━━━━━━━━━━━━━━━━━━
+請儘速前往後台確認庫存與計算運費報價！
+`;
+    await sendLineMessage(message);
+  });

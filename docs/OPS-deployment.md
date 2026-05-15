@@ -33,10 +33,12 @@ Hosting 設定：public directory → `public`、SPA → `No`
     "public": "public",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [{ "source": "/api/**", "function": "checkout" }],
-    "headers": [{
-      "source": "/**/*.@(jpg|jpeg|gif|png|webp)",
-      "headers": [{ "key": "Cache-Control", "value": "max-age=604800, public" }]
-    }]
+    "headers": [
+      {
+        "source": "/**/*.@(jpg|jpeg|gif|png|webp)",
+        "headers": [{ "key": "Cache-Control", "value": "max-age=604800, public" }]
+      }
+    ]
   }
 }
 ```
@@ -46,6 +48,7 @@ Hosting 設定：public directory → `public`、SPA → `No`
 ```powershell
 firebase emulators:start
 ```
+
 - 後台：`http://localhost:4000`
 - 前端：`http://localhost:5000`
 
@@ -57,6 +60,7 @@ firebase deploy
 ```
 
 快速指令：
+
 - `firebase deploy --only hosting`（僅前端）
 - `firebase deploy --only functions`（僅 API）
 - `firebase deploy --only firestore:rules`（僅安全規則）

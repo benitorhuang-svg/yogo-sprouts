@@ -15,14 +15,14 @@ related: [DES-design-system, DEV-onboarding, DEV-backend-api]
 
 ## 1. 技術堆疊
 
-| 層次 | 技術 |
-|------|------|
-| 專案管理 | Turborepo (Monorepo) |
-| 前端框架 | React 18 + TypeScript + Vite |
-| 前端樣式 | Vanilla CSS (Variables + Flexbox + Grid + RWD) |
-| 後端框架 | Node.js + Express (Firebase Functions) |
-| 共用模組 | 內部套件 `@yogo/shared` |
-| 程式碼品質 | ESLint + Prettier |
+| 層次       | 技術                                           |
+| ---------- | ---------------------------------------------- |
+| 專案管理   | Turborepo (Monorepo)                           |
+| 前端框架   | React 18 + TypeScript + Vite                   |
+| 前端樣式   | Vanilla CSS (Variables + Flexbox + Grid + RWD) |
+| 後端框架   | Node.js + Express (Firebase Functions)         |
+| 共用模組   | 內部套件 `@yogo/shared`                        |
+| 程式碼品質 | ESLint + Prettier                              |
 
 ## 2. 目錄結構
 

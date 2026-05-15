@@ -1,0 +1,170 @@
+/* ========================================
+   About Page
+======================================== */
+.about-main {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px 20px 60px;
+}
+
+.about-hero {
+  text-align: center;
+  padding: 40px 0 32px;
+}
+
+.about-hero-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.about-logo-hero-img {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: var(--shadow);
+}
+
+.about-hero-banner {
+  margin-top: 30px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.about-banner-img {
+  width: 100%;
+  height: auto;
+  max-height: 320px;
+  object-fit: cover;
+}
+
+.philosophy-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+@media (min-width: 768px) {
+  .philosophy-grid {
+    grid-template-columns: 1fr 1.2fr;
+    align-items: center;
+  }
+}
+
+.philosophy-text {
+  line-height: 1.8;
+  color: var(--text-sub);
+}
+
+.philosophy-images {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.philosophy-img-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.philosophy-img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.philosophy-img-caption {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 8px 4px;
+  color: var(--green-dark);
+}
+
+.about-hero h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--green-dark);
+  margin-bottom: 8px;
+}
+
+.about-tagline {
+  font-size: 1.05rem;
+  color: var(--text-sub);
+}
+
+.about-content {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+.about-block h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--green-dark);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--green-pale);
+}
+
+.about-block p {
+  line-height: 1.8;
+  color: var(--text-sub);
+}
+
+.about-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.about-list li {
+  font-size: 0.95rem;
+  color: var(--text-sub);
+  line-height: 1.6;
+}
+
+.shipping-cards {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.shipping-card {
+  flex: 1;
+  min-width: 180px;
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+}
+
+.shipping-card.cold {
+  background: var(--cold-blue);
+}
+.shipping-card.normal {
+  background: var(--warm-yellow);
+}
+
+.shipping-icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.shipping-card h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--text-main);
+}
+
+.shipping-card p {
+  font-size: 0.9rem;
+  color: var(--text-sub);
+}

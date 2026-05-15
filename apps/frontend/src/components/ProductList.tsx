@@ -19,7 +19,12 @@ const ProductList: FC = () => {
   return (
     <main className="shop-main" id="shop">
       {categories
-        .filter((cat) => selectedCategory === 'all' || selectedCategory === cat.id || selectedCategory === 'favorites')
+        .filter(
+          (cat) =>
+            selectedCategory === 'all' ||
+            selectedCategory === cat.id ||
+            selectedCategory === 'favorites'
+        )
         .map((cat) => {
           const catProducts = filteredProducts.filter((p) => p.category === cat.id);
           if (catProducts.length === 0) return null;

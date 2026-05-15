@@ -7,7 +7,8 @@ interface ProductCardProps {
 }
 
 const ProductCard: FC<ProductCardProps> = ({ product }) => {
-  const { cart, addToCart, removeFromCart, isFavorite, toggleFavorite } = useAppContext();
+  const { cart, addToCart, removeFromCart, isFavorite, toggleFavorite, setSelectedProduct } =
+    useAppContext();
   const qty = cart[product.id] || 0;
 
   const badgeClass = product.cold ? 'badge-cold' : 'badge-normal';
@@ -17,7 +18,9 @@ const ProductCard: FC<ProductCardProps> = ({ product }) => {
   if (product.stock === 0) {
     stockBadge = <span className="badge badge-soldout">🔴 已售完</span>;
   } else if (product.stock <= 5) {
-    stockBadge = <span className="badge badge-low-stock low-stock-badge">⚠️ 僅剩 {product.stock} 件</span>;
+    stockBadge = (
+      <span className="badge badge-low-stock low-stock-badge">⚠️ 僅剩 {product.stock} 件</span>
+    );
   } else {
     stockBadge = <span className="badge badge-stock">庫存: {product.stock}</span>;
   }
@@ -25,7 +28,11 @@ const ProductCard: FC<ProductCardProps> = ({ product }) => {
   const isPlusDisabled = qty >= product.stock;
 
   return (
-    <div className={`product-card ${product.stock === 0 ? 'sold-out' : ''}`} data-id={product.id}>
+    <div
+      className={`product-card ${product.stock === 0 ? 'sold-out' : ''}`}
+      data-id={product.id}
+      onClick={() => setSelectedProduct(product)}
+    >
       <div className="product-card-media-wrapper">
         {product.img ? (
           <img src={product.img} alt={product.name} className="product-img" loading="lazy" />

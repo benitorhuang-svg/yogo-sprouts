@@ -6,6 +6,7 @@
 ---
 
 ## 🟢 Phase 0 — 基礎建設（開發環境與靜態原型）
+
 - [v] TypeScript 嚴格模式編譯與管理 (`tsconfig.json`)
 - [v] 一鍵啟動本機開發環境 (`npm run dev` = tsc -w + http-server)
 - [v] 響應式商品網格渲染與過濾 UI (`src/shop.ts`)
@@ -22,6 +23,7 @@
 ---
 
 ## 🔴 Phase A — 高優先優化（直接提升轉換率）
+
 - [v] **A1. 商品即時搜尋與關鍵字過濾**
   - [v] 新增 `src/search.ts` 搜尋過濾模組
   - [v] 在分類 Tabs 上方新增高雅帶 🔍 圖示的搜尋框
@@ -42,6 +44,7 @@
 ---
 
 ## 🔵 Phase 1 — Firebase 雲端託管與上線部署
+
 - [v] **Firebase 專案初始化**
   - [v] 全域安裝並配置 `firebase-tools` CLI
   - [v] 執行 `firebase login` 完成 Google 帳號授權
@@ -58,7 +61,9 @@
 ---
 
 ## 🟡 Phase 2 — Firebase 後端資料庫與 API
+
 ### 2A. Firestore 資料治理
+
 - [v] **商品資料庫雲端化**
   - [v] 編寫 Cloud Functions 種子腳本，自動將 33 款精選商品導入 Firestore `products` 集合
   - [v] 重構前端 `src/data.ts` 改為非同步調用 `/api/products` 獲取最新資料
@@ -68,6 +73,7 @@
   - [v] 實作嚴格的訂單流水編號規範：`#ORD-YYYYMMDD-NNN`（如：`#ORD-20260512-001`）
 
 ### 2B. Cloud Functions API 實作
+
 - [v] **GET `/api/products`**
   - [v] 建立 Express API 路由獲取全部 Firestore 商品資料，並依 ID 排序
 - [v] **POST `/api/checkout`**
@@ -76,6 +82,7 @@
   - [v] 整合 `express-rate-limit` 防止暴力下單（單一 IP 限制 10 分鐘內最多 5 次）
 
 ### 2C. 訂單自動通知系統
+
 - [v] **LINE Notify 店家即時通知**
   - [v] 申請並取得 LINE Notify 權杖
   - [v] 設置 Firebase 執行期組態參數 `line.notify_token`
@@ -91,6 +98,7 @@
 ---
 
 ## 🟠 Phase B — 中優先優化（提升顧客使用體驗）
+
 - [v] **B1. 收藏 / 願望清單**
   - [v] 商品卡片右上角新增 `🤍` 按鈕，點擊切換為 `❤️` 收藏狀態
   - [v] 串接 `localStorage('yogo_favorites')` 自動儲存用戶的最愛狀態
@@ -116,6 +124,7 @@
 ---
 
 ## 🟢 Phase C — 低優先優化（全功能極致打磨）
+
 - [v] **C1. Firebase Analytics 事件追蹤**
   - [v] 在 `index.html` 中安全引入 Firebase Analytics / App 官方 SDK 載入
   - [v] 新增 `src/analytics.ts` 抽象化事件層，確保本機與線上運作皆能列印日誌或發送統計
@@ -136,10 +145,12 @@
 ---
 
 ## 🚀 每次部署發布前檢查（QA & CI 驗證）
+
 - [v] 全面測試 `docs/TST-qa-checklist.md` 中涵蓋的所有 40+ 項發版驗證指標，確保 100% 綠燈通過
 - [v] 整理並更新 `docs/CHANGELOG.md` 變更日誌，詳細記錄本次大版本之優化歷程
 - [v] 於本機執行 `npm run build`，確保 TypeScript 編譯無錯誤、無警告，生成的 JS 結構完整
 - [v] 執行 `firebase deploy` 部署至 Hosting、Firestore 安全規則與 Cloud Functions，確保線上正式環境連線流暢
 
 ---
-*YoGo Sprout Workshop — 精緻生活，自給自足*
+
+_YoGo Sprout Workshop — 精緻生活，自給自足_

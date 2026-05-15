@@ -8,8 +8,12 @@ class SoundManager {
   private isBgmStarted: boolean = false;
 
   private bgmTracks: string[] = [
-    '/audio/bgm-1.mp3', '/audio/bgm-2.mp3', '/audio/bgm-3.mp3',
-    '/audio/bgm-4.mp3', '/audio/bgm-5.mp3', '/audio/bgm-6.mp3'
+    '/audio/bgm-1.mp3',
+    '/audio/bgm-2.mp3',
+    '/audio/bgm-3.mp3',
+    '/audio/bgm-4.mp3',
+    '/audio/bgm-5.mp3',
+    '/audio/bgm-6.mp3',
   ];
   private trackNames: string[] = [
     '🌱 晨曦晨露 - 芽菜工坊',
@@ -17,7 +21,7 @@ class SoundManager {
     '☀️ 陽光灑落 - 溫室日常',
     '💧 清泉滴答 - 水耕輕音樂',
     '🌾 豐收喜悅 - 芽菜狂想曲',
-    '🎵 YoGo 品牌主題曲 - 有夠菜'
+    '🎵 YoGo 品牌主題曲 - 有夠菜',
   ];
   private currentTrackIndex: number = 5;
   private currentVolume: number = 0.8;
@@ -29,17 +33,17 @@ class SoundManager {
 
     this.cartAdd = new Howl({
       src: ['/audio/sfx-cart-add.wav'],
-      volume: 0.6
+      volume: 0.6,
     });
 
     this.success = new Howl({
       src: ['/audio/sfx-success.wav'],
-      volume: 0.7
+      volume: 0.7,
     });
 
     this.categorySwitch = new Howl({
       src: ['/audio/sfx-category-switch.wav'],
-      volume: 0.4
+      volume: 0.4,
     });
   }
 
@@ -83,7 +87,7 @@ class SoundManager {
       },
       onplayerror: () => {
         console.warn('YoGo Audio: Autoplay blocked for BGM.');
-      }
+      },
     });
   }
 
@@ -94,16 +98,15 @@ class SoundManager {
   }
 
   public prevTrack(): void {
-    this.currentTrackIndex = (this.currentTrackIndex - 1 + this.bgmTracks.length) % this.bgmTracks.length;
+    this.currentTrackIndex =
+      (this.currentTrackIndex - 1 + this.bgmTracks.length) % this.bgmTracks.length;
     const wasPlaying = this.bgm ? this.bgm.playing() : false;
     this.loadBgm(this.bgmTracks[this.currentTrackIndex], wasPlaying);
   }
 
-
-
   public initBgmAutoplay(): void {
     if (this.isBgmStarted) return;
-    
+
     const startAudio = () => {
       if (!this.isBgmStarted) {
         this.bgm.play();

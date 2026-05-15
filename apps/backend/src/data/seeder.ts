@@ -8,7 +8,7 @@ export async function seedDatabaseIfEmpty(db: admin.firestore.Firestore) {
   if (snapshot.empty) {
     logger.info('Seeding initial products into Firestore...');
     const batch = db.batch();
-    INITIAL_PRODUCTS.forEach(p => {
+    INITIAL_PRODUCTS.forEach((p) => {
       const docRef = productsColl.doc(String(p.id));
       batch.set(docRef, p);
     });
@@ -20,7 +20,7 @@ export async function seedDatabaseIfEmpty(db: admin.firestore.Firestore) {
   if (couponSnapshot.empty) {
     logger.info('Seeding initial coupons into Firestore...');
     const batch = db.batch();
-    INITIAL_COUPONS.forEach(c => {
+    INITIAL_COUPONS.forEach((c) => {
       const docRef = couponsColl.doc(c.code);
       batch.set(docRef, c);
     });
@@ -33,13 +33,13 @@ export async function forceSeed(db: admin.firestore.Firestore) {
   const couponsColl = db.collection('coupons');
 
   const pBatch = db.batch();
-  INITIAL_PRODUCTS.forEach(p => {
+  INITIAL_PRODUCTS.forEach((p) => {
     pBatch.set(productsColl.doc(String(p.id)), p);
   });
   await pBatch.commit();
 
   const cBatch = db.batch();
-  INITIAL_COUPONS.forEach(c => {
+  INITIAL_COUPONS.forEach((c) => {
     cBatch.set(couponsColl.doc(c.code), c);
   });
   await cBatch.commit();

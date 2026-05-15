@@ -1,258 +1,267 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-TW">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>YoGo 安全金流模擬器 | Mock Payment Gateway</title>
-  <style>
-    :root {
-      --primary: #2d6a4f;
-      --primary-hover: #1b4332;
-      --bg: #f4f7f5;
-      --card-bg: #ffffff;
-      --text: #1e1e1e;
-      --text-sub: #666666;
-      --border: #e0e0e0;
-      --success: #2ec4b6;
-      --danger: #e74c3c;
-    }
-
-    [data-theme="dark"] {
-      --primary: #52b788;
-      --primary-hover: #74c69d;
-      --bg: #121212;
-      --card-bg: #1e1e1e;
-      --text: #f5f5f5;
-      --text-sub: #b0b0b0;
-      --border: #2e3234;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Noto Sans TC', sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      padding: 20px;
-      transition: background-color 0.3s, color 0.3s;
-    }
-
-    .payment-container {
-      background: var(--card-bg);
-      border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-      width: 100%;
-      max-width: 480px;
-      padding: 32px;
-      text-align: center;
-      border: 1px solid var(--border);
-    }
-
-    .header {
-      margin-bottom: 24px;
-    }
-
-    .logo {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--primary);
-      margin-bottom: 8px;
-    }
-
-    .title {
-      font-size: 1.2rem;
-      font-weight: 600;
-      color: var(--text);
-    }
-
-    .order-info {
-      background: var(--bg);
-      border-radius: 8px;
-      padding: 16px;
-      margin-bottom: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      border: 1px solid var(--border);
-    }
-
-    .info-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.95rem;
-    }
-
-    .info-label {
-      color: var(--text-sub);
-    }
-
-    .info-value {
-      font-weight: 600;
-    }
-
-    .amount-value {
-      color: var(--primary);
-      font-size: 1.2rem;
-    }
-
-    .button-group {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .btn {
-      width: 100%;
-      padding: 14px;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .btn-success {
-      background: var(--primary);
-      color: white;
-    }
-
-    .btn-success:hover {
-      background: var(--primary-hover);
-      transform: translateY(-1px);
-    }
-
-    .btn-danger {
-      background: transparent;
-      border: 1.5px solid var(--danger);
-      color: var(--danger);
-    }
-
-    .btn-danger:hover {
-      background: rgba(231, 76, 60, 0.08);
-    }
-
-    .status-msg {
-      margin-top: 20px;
-      padding: 12px;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      display: none;
-    }
-
-    .status-msg.success {
-      background: rgba(46, 196, 182, 0.15);
-      color: var(--success);
-      display: block;
-    }
-
-    .status-msg.error {
-      background: rgba(231, 76, 60, 0.15);
-      color: var(--danger);
-      display: block;
-    }
-
-    .footer {
-      margin-top: 24px;
-      font-size: 0.8rem;
-      color: var(--text-sub);
-    }
-  </style>
-</head>
-<body>
-  <div class="payment-container">
-    <div class="header">
-      <div class="logo">🌱 YoGo 有夠菜-金流託管</div>
-      <div class="title">安全模擬付款收銀台</div>
-    </div>
-
-    <div class="order-info">
-      <div class="info-row">
-        <span class="info-label">交易訂單編號：</span>
-        <span class="info-value" id="order-id">#ORD-LOADING</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">應付新台幣金額：</span>
-        <span class="info-value amount-value" id="order-amount">$0</span>
-      </div>
-    </div>
-
-    <div class="button-group">
-      <button class="btn btn-success" id="pay-success-btn">✅ 模擬付款成功 (ECPay Webhook)</button>
-      <button class="btn btn-danger" id="pay-fail-btn">❌ 模擬付款失敗</button>
-    </div>
-
-    <div id="status-box" class="status-msg"></div>
-
-    <div class="footer">
-      本頁面為金流串接沙盒模擬器，不涉及任何真實扣款交易。
-    </div>
-  </div>
-
-  <script>
-    // Sync theme
-    const savedTheme = localStorage.getItem('yogo_theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    if (savedTheme === 'dark') {
-      document.documentElement.setAttribute('data-theme', 'dark');
-    }
-
-    // Parse params
-    const urlParams = new URLSearchParams(window.location.search);
-    const orderId = urlParams.get('orderId') || '#ORD-MOCK-999';
-    const amount = urlParams.get('amount') || '150';
-
-    document.getElementById('order-id').textContent = orderId;
-    document.getElementById('order-amount').textContent = '$' + amount + ' 元';
-
-    const statusBox = document.getElementById('status-box');
-    const paySuccessBtn = document.getElementById('pay-success-btn');
-    const payFailBtn = document.getElementById('pay-fail-btn');
-
-    async function sendCallback(rtnCode, rtnMsg) {
-      statusBox.className = 'status-msg';
-      statusBox.textContent = '傳送付款結果通知中...';
-      statusBox.style.display = 'block';
-      paySuccessBtn.disabled = true;
-      payFailBtn.disabled = true;
-
-      try {
-        const response = await fetch('/api/payment/callback', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            MerchantTradeNo: orderId,
-            RtnCode: rtnCode,
-            RtnMsg: rtnMsg
-          })
-        });
-
-        const text = await response.text();
-        if (response.ok && (text.includes('1|OK') || rtnCode !== '1')) {
-          statusBox.className = 'status-msg success';
-          statusBox.textContent = rtnCode === '1' 
-            ? '🎉 模擬付款成功！訂單已更新為 [已付款 (paid)]。請關閉本分頁返回 YoGo 網站。' 
-            : '❌ 已傳送交易失敗狀態！';
-        } else {
-          statusBox.className = 'status-msg error';
-          statusBox.textContent = '⚠️ 伺服器回傳異常：' + text;
-        }
-      } catch (err) {
-        statusBox.className = 'status-msg error';
-        statusBox.textContent = '⚠️ 連線回報金流伺服器失敗：' + err.message;
-      } finally {
-        paySuccessBtn.disabled = false;
-        payFailBtn.disabled = false;
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YoGo 安全金流模擬器 | Mock Payment Gateway</title>
+    <style>
+      :root {
+        --primary: #2d6a4f;
+        --primary-hover: #1b4332;
+        --bg: #f4f7f5;
+        --card-bg: #ffffff;
+        --text: #1e1e1e;
+        --text-sub: #666666;
+        --border: #e0e0e0;
+        --success: #2ec4b6;
+        --danger: #e74c3c;
       }
-    }
 
-    paySuccessBtn.addEventListener('click', () => sendCallback('1', 'Succeeded'));
-    payFailBtn.addEventListener('click', () => sendCallback('10100073', 'Failed'));
-  </script>
-</body>
+      [data-theme='dark'] {
+        --primary: #52b788;
+        --primary-hover: #74c69d;
+        --bg: #121212;
+        --card-bg: #1e1e1e;
+        --text: #f5f5f5;
+        --text-sub: #b0b0b0;
+        --border: #2e3234;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: 'Noto Sans TC', sans-serif;
+        background-color: var(--bg);
+        color: var(--text);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+        transition:
+          background-color 0.3s,
+          color 0.3s;
+      }
+
+      .payment-container {
+        background: var(--card-bg);
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 480px;
+        padding: 32px;
+        text-align: center;
+        border: 1px solid var(--border);
+      }
+
+      .header {
+        margin-bottom: 24px;
+      }
+
+      .logo {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 8px;
+      }
+
+      .title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      .order-info {
+        background: var(--bg);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        border: 1px solid var(--border);
+      }
+
+      .info-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.95rem;
+      }
+
+      .info-label {
+        color: var(--text-sub);
+      }
+
+      .info-value {
+        font-weight: 600;
+      }
+
+      .amount-value {
+        color: var(--primary);
+        font-size: 1.2rem;
+      }
+
+      .button-group {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .btn {
+        width: 100%;
+        padding: 14px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .btn-success {
+        background: var(--primary);
+        color: white;
+      }
+
+      .btn-success:hover {
+        background: var(--primary-hover);
+        transform: translateY(-1px);
+      }
+
+      .btn-danger {
+        background: transparent;
+        border: 1.5px solid var(--danger);
+        color: var(--danger);
+      }
+
+      .btn-danger:hover {
+        background: rgba(231, 76, 60, 0.08);
+      }
+
+      .status-msg {
+        margin-top: 20px;
+        padding: 12px;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        display: none;
+      }
+
+      .status-msg.success {
+        background: rgba(46, 196, 182, 0.15);
+        color: var(--success);
+        display: block;
+      }
+
+      .status-msg.error {
+        background: rgba(231, 76, 60, 0.15);
+        color: var(--danger);
+        display: block;
+      }
+
+      .footer {
+        margin-top: 24px;
+        font-size: 0.8rem;
+        color: var(--text-sub);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="payment-container">
+      <div class="header">
+        <div class="logo">🌱 YoGo 有夠菜-金流託管</div>
+        <div class="title">安全模擬付款收銀台</div>
+      </div>
+
+      <div class="order-info">
+        <div class="info-row">
+          <span class="info-label">交易訂單編號：</span>
+          <span class="info-value" id="order-id">#ORD-LOADING</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">應付新台幣金額：</span>
+          <span class="info-value amount-value" id="order-amount">$0</span>
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button class="btn btn-success" id="pay-success-btn">
+          ✅ 模擬付款成功 (ECPay Webhook)
+        </button>
+        <button class="btn btn-danger" id="pay-fail-btn">❌ 模擬付款失敗</button>
+      </div>
+
+      <div id="status-box" class="status-msg"></div>
+
+      <div class="footer">本頁面為金流串接沙盒模擬器，不涉及任何真實扣款交易。</div>
+    </div>
+
+    <script>
+      // Sync theme
+      const savedTheme =
+        localStorage.getItem('yogo_theme') ||
+        (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      if (savedTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+
+      // Parse params
+      const urlParams = new URLSearchParams(window.location.search);
+      const orderId = urlParams.get('orderId') || '#ORD-MOCK-999';
+      const amount = urlParams.get('amount') || '150';
+
+      document.getElementById('order-id').textContent = orderId;
+      document.getElementById('order-amount').textContent = '$' + amount + ' 元';
+
+      const statusBox = document.getElementById('status-box');
+      const paySuccessBtn = document.getElementById('pay-success-btn');
+      const payFailBtn = document.getElementById('pay-fail-btn');
+
+      async function sendCallback(rtnCode, rtnMsg) {
+        statusBox.className = 'status-msg';
+        statusBox.textContent = '傳送付款結果通知中...';
+        statusBox.style.display = 'block';
+        paySuccessBtn.disabled = true;
+        payFailBtn.disabled = true;
+
+        try {
+          const response = await fetch('/api/payment/callback', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              MerchantTradeNo: orderId,
+              RtnCode: rtnCode,
+              RtnMsg: rtnMsg,
+            }),
+          });
+
+          const text = await response.text();
+          if (response.ok && (text.includes('1|OK') || rtnCode !== '1')) {
+            statusBox.className = 'status-msg success';
+            statusBox.textContent =
+              rtnCode === '1'
+                ? '🎉 模擬付款成功！訂單已更新為 [已付款 (paid)]。請關閉本分頁返回 YoGo 網站。'
+                : '❌ 已傳送交易失敗狀態！';
+          } else {
+            statusBox.className = 'status-msg error';
+            statusBox.textContent = '⚠️ 伺服器回傳異常：' + text;
+          }
+        } catch (err) {
+          statusBox.className = 'status-msg error';
+          statusBox.textContent = '⚠️ 連線回報金流伺服器失敗：' + err.message;
+        } finally {
+          paySuccessBtn.disabled = false;
+          payFailBtn.disabled = false;
+        }
+      }
+
+      paySuccessBtn.addEventListener('click', () => sendCallback('1', 'Succeeded'));
+      payFailBtn.addEventListener('click', () => sendCallback('10100073', 'Failed'));
+    </script>
+  </body>
 </html>

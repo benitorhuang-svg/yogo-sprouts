@@ -1,0 +1,39 @@
+/* ========================================
+   CSS Variables
+======================================== */
+:root {
+  --green-dark: #2d6a4f;
+  --green-mid: #40916c;
+  --green-light: #74c69d;
+  --green-pale: #d8f3dc;
+  --cold-blue: #e0f0ff;
+  --cold-text: #1a6fa0;
+  --warm-yellow: #fff8e6;
+  --warm-text: #7a5c00;
+  --text-main: #1e1e1e;
+  --text-sub: #666;
+  --border: #e0e0e0;
+  --white: #ffffff;
+  --shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  --radius: 10px;
+  --bg-body: #f7faf8;
+  --bg-modal: rgba(255, 255, 255, 0.98);
+}
+
+[data-theme='dark'] {
+  --text-main: #f5f5f5;
+  --text-sub: #b0b0b0;
+  --border: #2e3234;
+  --white: #181a1b;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  --green-dark: #52b788;
+  --green-mid: #74c69d;
+  --green-light: #95d5b2;
+  --green-pale: #1b4332;
+  --cold-blue: #0d2238;
+  --cold-text: #6eb4f0;
+  --warm-yellow: #3a2e05;
+  --warm-text: #fcd34d;
+  --bg-body: #121212;
+  --bg-modal: rgba(24, 26, 27, 0.98);
+}

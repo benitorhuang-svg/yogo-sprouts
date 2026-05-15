@@ -29,13 +29,17 @@ related: [PRD-product-catalog, BIZ-order-lifecycle]
 ```
 
 ### 設定商品「售完」
+
 將 `stock` 改為 `0`：
+
 ```typescript
 stock: 0,  // 前台自動加載售完遮罩
 ```
 
 ### 修改免運門檻
+
 在 [src/checkoutModal.ts](file:///c:/Users/benit/Desktop/YoGo/src/checkoutModal.ts) 中搜尋並修改：
+
 - 冷藏：`2000`
 - 常溫：`800`
 
@@ -48,11 +52,13 @@ stock: 0,  // 前台自動加載售完遮罩
 3. 進入 `orders` 集合查看每筆預購單
 
 ### 訂單欄位說明
+
 - `cust_name` / `cust_phone` / `cust_address`：收件人資訊
 - `cust_contact`：LINE ID 或 Email
 - `items`：展開可看購買明細
 - `status`：訂單狀態（參見 [BIZ-order-lifecycle](./BIZ-order-lifecycle.md)）
 
 ### 導出訂單
+
 - Firebase Console → JSON 導出
 - 或透過 BigQuery 匯出 CSV/Excel

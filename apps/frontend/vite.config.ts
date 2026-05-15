@@ -20,16 +20,16 @@ export default defineConfig({
           {
             src: 'img/brand/logo.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
           },
           {
             src: 'img/brand/logo.png',
             sizes: '512x512',
-            type: 'image/png'
-          }
-        ]
-      }
-    })
+            type: 'image/png',
+          },
+        ],
+      },
+    }),
   ],
   resolve: {
     alias: {
@@ -37,14 +37,14 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['@yogo/shared']
+    include: ['@yogo/shared'],
   },
   build: {
     commonjsOptions: {
-      include: [/@yogo\/shared/, /node_modules/]
-    }
+      include: [/@yogo\/shared/, /node_modules/],
+    },
   },
   test: {
-    exclude: ['node_modules', 'dist', '.idea', '.git', '.cache', 'e2e/**']
-  }
+    exclude: ['node_modules', 'dist', '.idea', '.git', '.cache', 'e2e/**'],
+  },
 });

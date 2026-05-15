@@ -23,7 +23,7 @@ function createWavBuffer(samples) {
   // fmt chunk
   buffer.write('fmt ', 12);
   buffer.writeUInt32LE(16, 16); // Subchunk1Size
-  buffer.writeUInt16LE(1, 20);  // AudioFormat (1 = PCM)
+  buffer.writeUInt16LE(1, 20); // AudioFormat (1 = PCM)
   buffer.writeUInt16LE(numChannels, 22);
   buffer.writeUInt32LE(SAMPLE_RATE, 24);
   buffer.writeUInt32LE(byteRate, 28);
@@ -61,7 +61,8 @@ if (!fs.existsSync(outputDir)) {
     const t = i / SAMPLE_RATE;
     const env = Math.exp(-t * 25);
     // Sine + subtle FM for glassy tone
-    samples[i] = Math.sin(2 * Math.PI * freq * t + Math.sin(2 * Math.PI * freq * 2 * t) * 0.5) * env * 0.5;
+    samples[i] =
+      Math.sin(2 * Math.PI * freq * t + Math.sin(2 * Math.PI * freq * 2 * t) * 0.5) * env * 0.5;
   }
   fs.writeFileSync(path.join(outputDir, 'sfx-category-switch.wav'), createWavBuffer(samples));
   console.log('Created sfx-category-switch.wav');
@@ -95,7 +96,7 @@ if (!fs.existsSync(outputDir)) {
   const duration = 1.5;
   const totalSamples = Math.floor(SAMPLE_RATE * duration);
   const samples = new Float32Array(totalSamples);
-  const notes = [523.25, 659.25, 783.99, 987.77, 1046.50]; // Cmaj7 arpeggio
+  const notes = [523.25, 659.25, 783.99, 987.77, 1046.5]; // Cmaj7 arpeggio
   const delays = [0, 0.06, 0.12, 0.18, 0.24];
   for (let i = 0; i < totalSamples; i++) {
     const t = i / SAMPLE_RATE;
@@ -118,26 +119,26 @@ if (!fs.existsSync(outputDir)) {
   const duration = 8.0; // 8 seconds loop
   const totalSamples = Math.floor(SAMPLE_RATE * duration);
   const samples = new Float32Array(totalSamples);
-  
+
   // Ambient chord progression: Cmaj9 -> Fmaj9 -> G6 -> Cmaj9
   const chords = [
-    [261.63, 392.00, 659.25, 987.77], // Cmaj7
-    [174.61, 349.23, 659.25, 880.00], // Fmaj7(9)
-    [196.00, 392.00, 659.25, 783.99], // G6
-    [261.63, 392.00, 659.25, 987.77]  // Cmaj7
+    [261.63, 392.0, 659.25, 987.77], // Cmaj7
+    [174.61, 349.23, 659.25, 880.0], // Fmaj7(9)
+    [196.0, 392.0, 659.25, 783.99], // G6
+    [261.63, 392.0, 659.25, 987.77], // Cmaj7
   ];
 
   for (let i = 0; i < totalSamples; i++) {
     const t = i / SAMPLE_RATE;
     const chordIndex = Math.floor(t / 2.0) % 4;
     const currentChord = chords[chordIndex];
-    
+
     // Soft synth pad
     let pad = 0;
     for (let freq of currentChord) {
       pad += Math.sin(2 * Math.PI * freq * t) * 0.08;
     }
-    
+
     // Smooth LFO for greenhouse breeze / organic feel
     const lfo = Math.sin(2 * Math.PI * 0.25 * t) * 0.02;
     samples[i] = pad + lfo;

@@ -1,4 +1,4 @@
-import { FC, useState, useEffect } from 'react';
+import React, { FC, useState, useEffect } from 'react';
 import { audioManager } from '@/audioManager';
 import './MusicPlayer.css';
 
@@ -7,7 +7,9 @@ const MusicPlayer: FC = () => {
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(0.8);
   const [trackName, setTrackName] = useState(() => audioManager.getCurrentTrackName());
-  const [repeatMode, setRepeatMode] = useState<'playlist' | 'single'>(() => audioManager.repeatMode);
+  const [repeatMode, setRepeatMode] = useState<'playlist' | 'single'>(
+    () => audioManager.repeatMode
+  );
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -72,16 +74,30 @@ const MusicPlayer: FC = () => {
         <span className={`disc-icon ${isPlaying ? 'spinning' : ''}`}>💿</span>
       </div>
       <div className="player-controls">
-        <span className="player-title" title={trackName}>{trackName}</span>
-        <button className="control-btn mode-btn" onClick={handleToggleRepeat} title={repeatMode === 'playlist' ? '清單循環' : '單曲循環'}>
+        <span className="player-title" title={trackName}>
+          {trackName}
+        </span>
+        <button
+          className="control-btn mode-btn"
+          onClick={handleToggleRepeat}
+          title={repeatMode === 'playlist' ? '清單循環' : '單曲循環'}
+        >
           {repeatMode === 'playlist' ? '🔁' : '🔂'}
         </button>
-        <button className="control-btn" onClick={prevTrack} title="上一首">⏮️</button>
+        <button className="control-btn" onClick={prevTrack} title="上一首">
+          ⏮️
+        </button>
         <button className="play-btn" onClick={togglePlay} title={isPlaying ? '暫停' : '播放'}>
           {isPlaying ? '⏸️' : '▶️'}
         </button>
-        <button className="control-btn" onClick={nextTrack} title="下一首">⏭️</button>
-        <button className="control-btn volume-btn" onClick={toggleMute} title={isMuted ? '取消靜音' : '靜音'}>
+        <button className="control-btn" onClick={nextTrack} title="下一首">
+          ⏭️
+        </button>
+        <button
+          className="control-btn volume-btn"
+          onClick={toggleMute}
+          title={isMuted ? '取消靜音' : '靜音'}
+        >
           {isMuted || volume === 0 ? '🔇' : '🔊'}
         </button>
         <input
