@@ -10,6 +10,7 @@ export const checkoutSchema = z.object({
   cart: z.record(z.string(), z.number().positive()),
   couponCode: z.string().optional().nullable(),
   preferred_delivery_date: z.string().optional().nullable(),
+  user_uid: z.string().optional().nullable(),
 });
 
 export const couponQuerySchema = z.object({

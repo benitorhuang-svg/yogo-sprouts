@@ -1,28 +1,34 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 產品與優惠券：完全公開讀取 (不論是否登入)
+    // 產品：完全公開讀取，禁止前端寫入 (僅限 Cloud Functions 後端或 Admin 操作)
     match /products/{productId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if false; 
     }
+    
+    // 優惠券：完全公開讀取，禁止前端寫入
     match /coupons/{couponId} {
       allow read: if true;
       allow write: if false;
     }
-    // 訂單：所有人可建立，但只有登入者可讀取
+    
+    // 訂單：
+    // 1. 建立：禁止前端直接寫入 (防竄改金額)，由後端 /checkout API 統一處理
+    // 2. 讀取：僅限訂單擁有者讀取自己的訂單 (保護 PII 隱私)
     match /orders/{orderId} {
-      allow create: if true;
-      allow read: if request.auth != null;
+      allow create, update, delete: if false;
+      allow read: if request.auth != null && resource.data.user_uid == request.auth.uid;
     }
-    // 使用者資料：限本人讀寫
+    
+    // 使用者資料：嚴格限制僅本人可讀寫
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
-    // 額外兜底規則：防止未定義路徑報錯
-    match /{path=**} {
-      allow read: if true;
-      allow write: if request.auth != null;
+    
+    // 防呆：預設阻擋所有未定義路徑的存取
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

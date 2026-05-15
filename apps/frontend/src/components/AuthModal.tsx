@@ -7,7 +7,7 @@ interface AuthModalProps {
 }
 
 const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
-  const { user, login, logout } = useAppContext();
+  const { user, login, logout, updateUserData, resetPassword } = useAppContext();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLogin, setIsLogin] = useState(true);
@@ -15,11 +15,10 @@ const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
-  const [view, setView] = useState<'menu' | 'settings' | 'tiers'>('menu');
+  const [view, setView] = useState<'menu' | 'settings' | 'tiers' | 'forgot'>('menu');
   const [editName, setEditName] = useState('');
   const [phone, setPhone] = useState('0912-345-678');
   const [address, setAddress] = useState('台北市大安區和平東路二段106號');
-
   useEffect(() => {
     if (user) {
       setEditName(user.name);
@@ -42,6 +41,23 @@ const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSocialLogin = async (provider: 'google' | 'line' | 'guest') => {
+    setIsLoading(true);
+    try {
+      if (provider === 'guest') {
+        await login('guest@yogo.tw', '訪客體驗帳號');
+        onClose();
+      } else {
+        await login('', '', '', provider);
+        if (provider !== 'line') onClose();
+      }
+    } catch {
+      // Errors handled by context toast
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!type) return null;
@@ -89,7 +105,7 @@ const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);
-                    if (errors.email) setErrors({ ...errors, email: undefined });
+                    if (errors.email) setErrors(({ email: _, ...rest }) => rest);
                   }}
                   autoComplete="username"
                 />
@@ -104,7 +120,7 @@ const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
                     value={password}
                     onChange={(e) => {
                       setPassword(e.target.value);
-                      if (errors.password) setErrors({ ...errors, password: undefined });
+                      if (errors.password) setErrors(({ password: _, ...rest }) => rest);
                     }}
                     autoComplete="current-password"
                   />
@@ -117,6 +133,20 @@ const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
                   </button>
                 </div>
                 {errors.password && <span className="error-msg">{errors.password}</span>}
+                {isLogin && (
+                  <p
+                    style={{
+                      fontSize: '0.8rem',
+                      color: '#2d6a4f',
+                      textAlign: 'right',
+                      marginTop: '5px',
+                      cursor: 'pointer',
+                    }}
+                    onClick={() => setView('forgot')}
+                  >
+                    忘記密碼？
+                  </p>
+                )}
               </div>
               <button
                 type="submit"
@@ -145,10 +175,10 @@ const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
             </div>
             <div className="quick-login-options">
               <button
+                type="button"
                 className="quick-btn google-btn"
-                onClick={() => {
-                  login('', '', '', 'google');
-                }}
+                disabled={isLoading}
+                onClick={() => handleSocialLogin('google')}
               >
                 <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
                   <path
@@ -171,10 +201,10 @@ const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
                 <span>Google 快速登入</span>
               </button>
               <button
+                type="button"
                 className="quick-btn line-btn"
-                onClick={() => {
-                  login('', '', '', 'line');
-                }}
+                disabled={isLoading}
+                onClick={() => handleSocialLogin('line')}
               >
                 <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
                   <path
@@ -185,11 +215,10 @@ const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
                 <span>LINE 快速登入</span>
               </button>
               <button
+                type="button"
                 className="quick-btn guest-btn"
-                onClick={() => {
-                  login('guest@yogo.tw', '訪客體驗帳號');
-                  onClose();
-                }}
+                disabled={isLoading}
+                onClick={() => handleSocialLogin('guest')}
               >
                 <span className="btn-icon" style={{ fontSize: '1.2rem' }}>
                   🌱
@@ -280,10 +309,15 @@ const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
               </div>
               <form
                 className="auth-form"
-                onSubmit={(e) => {
+                onSubmit={async (e) => {
                   e.preventDefault();
-                  login(user?.email || 'yogo@example.com', editName);
-                  setView('menu');
+                  setIsLoading(true);
+                  try {
+                    await updateUserData({ name: editName });
+                    setView('menu');
+                  } finally {
+                    setIsLoading(false);
+                  }
                 }}
               >
                 <div className="input-group">
@@ -350,6 +384,64 @@ const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
               >
                 返回會員中心
               </button>
+            </>
+          )}
+
+          {view === 'forgot' && (
+            <>
+              <div className="profile-header" style={{ marginBottom: 15 }}>
+                <h2>📧 重設密碼</h2>
+                <p className="auth-subtitle" style={{ marginBottom: 5 }}>
+                  請輸入您的註冊 Email，我們將寄送重設信件
+                </p>
+              </div>
+              <form
+                className="auth-form"
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!email) {
+                    setErrors({ email: '請輸入 Email' });
+                    return;
+                  }
+                  setIsLoading(true);
+                  try {
+                    await resetPassword(email);
+                    setIsLogin(true);
+                    setView('menu');
+                  } catch {
+                    // Handled in resetPassword toast
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
+              >
+                <div className={`input-group ${errors.email ? 'has-error' : ''}`}>
+                  <label>電子郵件</label>
+                  <input
+                    type="email"
+                    placeholder="yogo@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                  {errors.email && <span className="error-msg">{errors.email}</span>}
+                </div>
+                <button
+                  type="submit"
+                  className={`modal-add-to-cart-btn auth-submit-btn ${isLoading ? 'loading' : ''}`}
+                  disabled={isLoading}
+                >
+                  {isLoading ? <span className="spinner"></span> : '發送重設信件'}
+                </button>
+                <button
+                  type="button"
+                  className="quick-btn"
+                  onClick={() => setView('menu')}
+                  style={{ marginTop: 10 }}
+                >
+                  返回登入
+                </button>
+              </form>
             </>
           )}
         </div>

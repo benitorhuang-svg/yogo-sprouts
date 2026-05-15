@@ -25,8 +25,17 @@ const app = express();
 app.use(cors({ origin: true }));
 app.use(express.json());
 
+// Firebase Hosting Rewrite 會保留原始路徑，而直接呼叫 Function 會移除 function name。
+// 統一將路徑中的 /api 移除，讓後端路由判斷更一致。
+app.use((req, res, next) => {
+  if (req.url.startsWith('/api/')) {
+    req.url = req.url.replace(/^\/api/, '');
+  }
+  next();
+});
+
 // LINE Login 驗證接口
-app.post('/api/auth/line', async (req, res) => {
+app.post('/auth/line', async (req, res) => {
   const { code, redirectUri } = req.body;
   const channelId = functions.config().line?.channel_id || process.env.LINE_CHANNEL_ID;
   const channelSecret = functions.config().line?.channel_secret || process.env.LINE_CHANNEL_SECRET;
@@ -152,7 +161,7 @@ app.post('/checkout', checkoutLimiter, async (req, res) => {
       .json({ success: false, error: '資料驗證失敗', details: validation.error.format() });
   }
 
-  const { customer, cart, couponCode, preferred_delivery_date } = validation.data;
+  const { customer, cart, couponCode, preferred_delivery_date, user_uid } = validation.data;
 
   if (Object.keys(cart).length === 0) {
     return res.status(400).json({ success: false, error: '購物車為空，無法結帳！' });
@@ -241,6 +250,7 @@ app.post('/checkout', checkoutLimiter, async (req, res) => {
       const orderId = `#ORD-${todayStr}-${String(ordersSnapshot.size + 1).padStart(3, '0')}`;
       const finalPrice = Math.max(0, calculatedTotal - discountAmount);
       const orderData = {
+        user_uid: user_uid || null,
         cust_name: customer.name,
         cust_phone: customer.phone,
         cust_contact: customer.contact,
