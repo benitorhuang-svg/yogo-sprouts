@@ -28,6 +28,15 @@
     ],
     "headers": [
       {
+        "source": "**",
+        "headers": [
+          {
+            "key": "Cross-Origin-Opener-Policy",
+            "value": "same-origin-allow-popups"
+          }
+        ]
+      },
+      {
         "source": "/**/*.@(jpg|jpeg|gif|png|webp)",
         "headers": [
           {
