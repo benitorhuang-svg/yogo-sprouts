@@ -9,6 +9,17 @@ const app = express();
 app.use(cors({ origin: true }));
 app.use(express.json());
 
+// [診斷] 記錄所有請求路徑，幫助排除 404 問題
+app.use((req, _res, next) => {
+  console.log(`[API Request] ${req.method} ${req.url}`);
+  next();
+});
+
+// 0. 健康檢查 (直接在最頂層處理，支援多種路徑格式)
+app.get(['/health', '/api/health'], (_req, res) => {
+  res.status(200).send('YoGo API is Alive');
+});
+
 // 2. 路徑正規化 (處理 Hosting Rewrite 與 Function 直接呼叫的差異)
 app.use((req, res, next) => {
   if (req.url.startsWith('/api/')) {
@@ -16,10 +27,6 @@ app.use((req, res, next) => {
   }
   next();
 });
-
-// 0. 健康檢查 (用於 Pre-warming 喚醒 Cold Start)
-// 放在正規化之後，確保 /api/health 能正確匹配到 /health
-app.get('/health', (req, res) => res.status(200).send('OK'));
 
 // 3. 載入模組化路由
 app.use('/', routes);
