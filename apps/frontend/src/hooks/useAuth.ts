@@ -34,7 +34,12 @@ export const useAuth = (showToast: (msg: string) => void) => {
     const cachedUser = localStorage.getItem('yogo-user-profile');
     if (cachedUser) {
       try {
-        setUser(JSON.parse(cachedUser));
+        const parsedUser = JSON.parse(cachedUser) as User;
+        // 補齊可能缺少的舊版欄位
+        if (!parsedUser.coupons) parsedUser.coupons = ['YOGO2026', 'SPROUT80', 'FREESHIP'];
+        if (!parsedUser.phone) parsedUser.phone = '';
+        if (!parsedUser.address) parsedUser.address = '';
+        setUser(parsedUser);
       } catch {
         console.warn('Failed to parse cached user profile');
       }
