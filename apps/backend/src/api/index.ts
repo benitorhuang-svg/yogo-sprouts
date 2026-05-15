@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
-import { Product, Coupon } from '@yogo/shared';
+import { Product, Coupon } from '../shared';
 import { seedDatabaseIfEmpty, forceSeed } from '../data/seeder';
 import { sendLineMessage } from '../services/notification.service';
 import { logger } from '../utils/logger';

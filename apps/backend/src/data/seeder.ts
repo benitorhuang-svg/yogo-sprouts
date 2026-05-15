@@ -1,5 +1,5 @@
 import * as admin from 'firebase-admin';
-import { INITIAL_PRODUCTS, INITIAL_COUPONS } from '@yogo/shared';
+import { INITIAL_PRODUCTS, INITIAL_COUPONS } from '../shared';
 import { logger } from '../utils/logger';
 
 export async function seedDatabaseIfEmpty(db: admin.firestore.Firestore) {

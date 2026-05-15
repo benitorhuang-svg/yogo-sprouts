@@ -10,6 +10,11 @@ const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
   const { user, login, logout } = useAppContext();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLogin, setIsLogin] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+
   const [view, setView] = useState<'menu' | 'settings' | 'tiers'>('menu');
   const [editName, setEditName] = useState('');
   const [phone, setPhone] = useState('0912-345-678');
@@ -20,6 +25,24 @@ const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
       setEditName(user.name);
     }
   }, [user]);
+
+  const validate = () => {
+    const newErrors: { email?: string; password?: string } = {};
+    if (!email) {
+      newErrors.email = '請輸入電子郵件';
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = '格式不正確';
+    }
+
+    if (!password) {
+      newErrors.password = '請輸入密碼';
+    } else if (password.length < 6) {
+      newErrors.password = '密碼需至少 6 位數';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   if (!type) return null;
 
@@ -32,37 +55,91 @@ const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
             ✕
           </button>
           <div className="auth-modal-content">
-            <h2>👤 YoGo 會員登入</h2>
-            <p className="auth-subtitle">登入享有專屬芽農紅利與VIP折扣</p>
-            <div className="auth-form">
-              <div className="input-group">
+            <h2>👤 YoGo {isLogin ? '會員登入' : '加入會員'}</h2>
+            <p className="auth-subtitle">
+              {isLogin ? '登入享有專屬芽農紅利與VIP折扣' : '立即註冊，開啟您的鮮耕生活'}
+            </p>
+            <form
+              className="auth-form"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!validate()) return;
+
+                setIsLoading(true);
+                try {
+                  await login(email, '', password, undefined, !isLogin);
+                  onClose();
+                } catch (err: unknown) {
+                  const error = err as { code?: string };
+                  if (error.code === 'auth/wrong-password') {
+                    setErrors({ password: '密碼錯誤' });
+                  } else if (error.code === 'auth/user-not-found') {
+                    setErrors({ email: '帳號不存在' });
+                  }
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
+            >
+              <div className={`input-group ${errors.email ? 'has-error' : ''}`}>
                 <label>電子郵件 / 會員帳號</label>
                 <input
                   type="email"
                   placeholder="yogo@example.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (errors.email) setErrors({ ...errors, email: undefined });
+                  }}
+                  autoComplete="username"
                 />
+                {errors.email && <span className="error-msg">{errors.email}</span>}
               </div>
-              <div className="input-group">
+              <div className={`input-group ${errors.password ? 'has-error' : ''}`}>
                 <label>密碼</label>
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
+                <div className="password-input-wrapper">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (errors.password) setErrors({ ...errors, password: undefined });
+                    }}
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? '👁️' : '👁️‍🗨️'}
+                  </button>
+                </div>
+                {errors.password && <span className="error-msg">{errors.password}</span>}
               </div>
               <button
-                className="modal-add-to-cart-btn auth-submit-btn"
-                onClick={() => {
-                  login(email || 'benito@yogo.tw', '', password);
-                  onClose();
-                }}
+                type="submit"
+                className={`modal-add-to-cart-btn auth-submit-btn ${isLoading ? 'loading' : ''}`}
+                disabled={isLoading}
               >
-                立即登入
+                {isLoading ? <span className="spinner"></span> : isLogin ? '立即登入' : '確認註冊'}
               </button>
-            </div>
+              <p style={{ marginTop: '15px', fontSize: '0.9rem', color: '#666' }}>
+                {isLogin ? '還不是會員？' : '已經有帳號？'}
+                <span
+                  style={{
+                    color: '#2d6a4f',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    marginLeft: '5px',
+                  }}
+                  onClick={() => setIsLogin(!isLogin)}
+                >
+                  {isLogin ? '點此註冊' : '點此登入'}
+                </span>
+              </p>
+            </form>
             <div className="auth-divider">
               <span>或</span>
             </div>
@@ -70,11 +147,10 @@ const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
               <button
                 className="quick-btn google-btn"
                 onClick={() => {
-                  login('google@yogo.tw', 'Google 綠手指會員', undefined, 'google');
-                  onClose();
+                  login('', '', '', 'google');
                 }}
               >
-                <svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg">
+                <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
                   <path
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                     fill="#4285F4"
@@ -97,11 +173,10 @@ const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
               <button
                 className="quick-btn line-btn"
                 onClick={() => {
-                  login('line@yogo.tw', 'LINE 芽苗大使', undefined, 'line');
-                  onClose();
+                  login('', '', '', 'line');
                 }}
               >
-                <svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg">
+                <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
                   <path
                     d="M24 10.29c0-4.38-5.37-7.96-12-7.96S0 5.91 0 10.29c0 3.93 4.26 7.25 10.2 7.84.42.09 1 .28 1.15.65.13.33.08.85.04 1.18l-.29 1.77c-.07.47-.36 1.83 1.6 1s3.52-2.08 6.45-4.34C22.25 15.63 24 13.12 24 10.29M8.33 12.83H5.77c-.31 0-.57-.25-.57-.57V7.81c0-.31.25-.57.57-.57s.57.25.57.57v3.87h2.01c.31 0 .57.25.57.57s-.26.58-.59.58m2.52-.57c0 .31-.25.57-.57.57s-.57-.25-.57-.57V7.81c0-.31.25-.57.57-.57s.57.25.57.57v4.45m5.01-4.45v4.45c0 .31-.25.57-.57.57s-.57-.25-.57-.57v-3.08l-2.07 2.97c-.08.11-.2.18-.34.18h-.05c-.27-.03-.48-.27-.48-.55V7.81c0-.31.25-.57.57-.57s.57.25.57.57v3.08l2.07-2.97c.08-.11.2-.18.34-.18h.05c.27.03.48.27.48.55m3.75 0v1.43h-1.57v.58h1.57c.31 0 .57.25.57.57s-.26.57-.57.57h-1.57v.73h1.57c.31 0 .57.25.57.57s-.26.58-.57.58H17.5c-.31 0-.57-.25-.57-.57V7.81c0-.31.25-.57.57-.57h2.12c.31 0 .57.25.57.57s-.25.57-.57.57"
                     fill="#06C755"
@@ -116,7 +191,9 @@ const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
                   onClose();
                 }}
               >
-                <span style={{ fontSize: '1.1rem' }}>🌱</span>
+                <span className="btn-icon" style={{ fontSize: '1.2rem' }}>
+                  🌱
+                </span>
                 <span>訪客免帳號體驗</span>
               </button>
             </div>
@@ -201,7 +278,14 @@ const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
                   修改您的專屬芽農收件資訊
                 </p>
               </div>
-              <div className="auth-form">
+              <form
+                className="auth-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  login(user?.email || 'yogo@example.com', editName);
+                  setView('menu');
+                }}
+              >
                 <div className="input-group">
                   <label>會員顯示名稱</label>
                   <input
@@ -218,19 +302,13 @@ const AuthModal: FC<AuthModalProps> = ({ type, onClose }) => {
                   <label>預設低溫配送地址</label>
                   <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} />
                 </div>
-                <button
-                  className="modal-add-to-cart-btn auth-submit-btn"
-                  onClick={() => {
-                    login(user?.email || 'yogo@example.com', editName);
-                    setView('menu');
-                  }}
-                >
+                <button type="submit" className="modal-add-to-cart-btn auth-submit-btn">
                   儲存設定
                 </button>
-                <button className="quick-btn" onClick={() => setView('menu')}>
+                <button type="button" className="quick-btn" onClick={() => setView('menu')}>
                   返回上一頁
                 </button>
-              </div>
+              </form>
             </>
           )}
 

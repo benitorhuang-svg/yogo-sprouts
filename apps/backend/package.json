@@ -13,13 +13,14 @@
   },
   "main": "lib/index.js",
   "dependencies": {
-    "@yogo/shared": "*",
     "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-rate-limit": "^7.2.0",
     "firebase-admin": "^12.0.0",
     "firebase-functions": "^5.0.0",
-    "pino": "^10.3.1"
+    "pino": "^10.3.1",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

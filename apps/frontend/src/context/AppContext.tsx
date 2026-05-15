@@ -23,6 +23,8 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithCustomToken,
+  signOut,
+  onAuthStateChanged,
 } from 'firebase/auth';
 import { auth, db } from '../firebaseClient';
 
@@ -53,7 +55,8 @@ interface AppContextType {
     email: string,
     name?: string,
     password?: string,
-    provider?: 'google' | 'line'
+    provider?: 'google' | 'line',
+    isSignup?: boolean
   ) => Promise<void>;
   logout: () => void;
   getTotal: () => number;
@@ -76,10 +79,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [favorites, setFavorites] = useState<number[]>([]);
-  const [user, setUser] = useState<User | null>(() => {
-    const savedUser = localStorage.getItem('yogo-user');
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
+  const [user, setUser] = useState<User | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState<boolean>(false);
@@ -95,59 +95,38 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, 3000);
   }, []);
 
-  // 載入我的收藏
+  // 監聽 Firebase Auth 狀態與同步資料庫使用者資訊
   useEffect(() => {
-    const savedFavs = localStorage.getItem('yogo-favorites');
-    if (savedFavs) {
-      try {
-        setFavorites(JSON.parse(savedFavs));
-      } catch (e) {
-        console.error('Failed to parse favorites from localStorage', e);
-      }
-    }
-  }, []);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const userRef = doc(db, 'users', firebaseUser.uid);
+        const snap = await getDoc(userRef);
 
-  useEffect(() => {
-    localStorage.setItem('yogo-favorites', JSON.stringify(favorites));
-  }, [favorites]);
-
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem('yogo-user', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('yogo-user');
-    }
-  }, [user]);
-
-  // 【Firestore 會員驗證】初次掛載自動驗證雲端 session 狀態
-  useEffect(() => {
-    const verifySession = async () => {
-      const savedUser = localStorage.getItem('yogo-user');
-      if (savedUser) {
-        try {
-          const parsed: User = JSON.parse(savedUser);
-          const uid = parsed.email.replace(/[^a-zA-Z0-9]/g, '_');
-          const userRef = doc(db, 'users', uid);
-          const snap = await getDoc(userRef);
-          if (snap.exists()) {
-            const data = snap.data();
-            const verifiedUser: User = {
-              name: data.displayName || parsed.name,
-              email: data.email || parsed.email,
-              tier: data.tier || parsed.tier,
-              points: data.points !== undefined ? data.points : parsed.points,
-            };
-            setUser(verifiedUser);
-            console.log('【Firestore 會員驗證】自動登入狀態雲端驗證成功！');
-          }
-        } catch (e) {
-          console.warn('【Firestore 會員驗證】自動驗證降級使用本機紀錄', e);
+        if (snap.exists()) {
+          setUser(snap.data() as User);
+        } else {
+          // 初始化新使用者資料 (新註冊)
+          const newUser: User = {
+            name: firebaseUser.displayName || '新芽農',
+            email: firebaseUser.email || '',
+            tier: '🌱 綠手指新手',
+            points: 0,
+          };
+          await setDoc(userRef, {
+            ...newUser,
+            uid: firebaseUser.uid,
+            createdAt: new Date().toISOString(),
+          });
+          setUser(newUser);
         }
+        console.log('【Auth】使用者已登入:', firebaseUser.uid);
+      } else {
+        setUser(null);
+        console.log('【Auth】目前為訪客狀態');
       }
-    };
-    verifySession();
+    });
 
-    // 處理 LINE Login Callback
+    // 處理 LINE Login Callback (如果 URL 有 code)
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
     if (code) {
@@ -174,96 +153,97 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       };
       handleLineCallback();
     }
+
+    return () => unsubscribe();
   }, [showToast]);
+
+  // 載入我的收藏
+  useEffect(() => {
+    const savedFavs = localStorage.getItem('yogo-favorites');
+    if (savedFavs) {
+      try {
+        setFavorites(JSON.parse(savedFavs));
+      } catch (e) {
+        console.error('Failed to parse favorites from localStorage', e);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('yogo-favorites', JSON.stringify(favorites));
+  }, [favorites]);
 
   const login = async (
     email: string,
-    name?: string,
+    _name?: string,
     password?: string,
-    provider?: 'google' | 'line'
+    provider?: 'google' | 'line',
+    isSignup?: boolean
   ) => {
-    audioManager.playSuccess();
-    let verifiedEmail = email;
-    let verifiedName = name || email.split('@')[0] || '綠手指芽農';
+    console.log('【Login Debug】開始登入流程, provider:', provider, 'isSignup:', isSignup);
 
     try {
       if (provider === 'google') {
         const googleProvider = new GoogleAuthProvider();
-        const result = await signInWithPopup(auth, googleProvider);
-        verifiedEmail = result.user.email || email;
-        verifiedName = result.user.displayName || verifiedName;
+        await signInWithPopup(auth, googleProvider);
+        showToast('✅ Google 登入成功！');
       } else if (provider === 'line') {
         const clientId = '2010090768';
+        // 確保 redirectUri 與 LINE Developers Console 上的 Callback URL 完全一致 (包含最後的斜線)
         const redirectUri = encodeURIComponent(window.location.origin + '/');
-        const state = Math.random().toString(36).substring(7);
+        const state = Math.random().toString(36).substring(2, 15); // 產生較長且穩定的 state
         const lineUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&state=${state}&scope=profile%20openid%20email`;
+
+        console.log('【Login Debug】準備跳轉 LINE, Redirect URI:', window.location.origin + '/');
         window.location.href = lineUrl;
         return;
       } else if (password) {
-        try {
-          const userCredential = await signInWithEmailAndPassword(auth, email, password);
-          verifiedEmail = userCredential.user.email || email;
-        } catch (authErr: unknown) {
-          const error = authErr as { code: string };
-          if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-            await createUserWithEmailAndPassword(auth, email, password);
-          } else {
-            throw authErr;
-          }
+        if (isSignup) {
+          await createUserWithEmailAndPassword(auth, email, password);
+          showToast('🎉 註冊成功，歡迎加入 YoGo！');
+        } else {
+          await signInWithEmailAndPassword(auth, email, password);
+          showToast('✅ 登入成功！');
         }
-      }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Login error';
-      console.warn('Firebase Auth 驗證降級：', message);
-    }
-
-    const uid = verifiedEmail.replace(/[^a-zA-Z0-9]/g, '_');
-    const defaultUser: User = {
-      name: verifiedName,
-      email: verifiedEmail,
-      tier: '👑 VIP 芽苗大師',
-      points: 168,
-    };
-
-    try {
-      const userRef = doc(db, 'users', uid);
-      const snap = await getDoc(userRef);
-      if (snap.exists()) {
-        const data = snap.data();
-        const verifiedUser: User = {
-          name: verifiedName || data.displayName || defaultUser.name,
-          email: data.email || defaultUser.email,
-          tier: data.tier || defaultUser.tier,
-          points: data.points !== undefined ? data.points : defaultUser.points,
-        };
-        setUser(verifiedUser);
-        if (verifiedName) {
-          await setDoc(
-            userRef,
-            { displayName: verifiedName, updatedAt: new Date().toISOString() },
-            { merge: true }
-          );
-        }
-      } else {
-        await setDoc(userRef, {
-          uid,
-          displayName: defaultUser.name,
-          email: defaultUser.email,
-          tier: defaultUser.tier,
-          points: defaultUser.points,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+      } else if (email === 'guest@yogo.tw') {
+        setUser({
+          name: '訪客芽農',
+          email: 'guest@yogo.tw',
+          tier: '🌱 訪客體驗',
+          points: 0,
         });
-        setUser(defaultUser);
+        showToast('🌱 訪客體驗模式已開啟');
       }
-    } catch (e) {
-      console.error('Firestore user record error:', e);
-      setUser(defaultUser);
+      audioManager.playSuccess();
+    } catch (err: unknown) {
+      console.error('【Login Debug】異常:', err);
+      let errorMsg = '操作失敗，請稍後再試';
+      const error = err as { code?: string };
+
+      if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        errorMsg = '❌ 帳號或密碼錯誤';
+      } else if (error.code === 'auth/user-not-found') {
+        errorMsg = '❌ 找不到此帳號，請先註冊';
+      } else if (error.code === 'auth/email-already-in-use') {
+        errorMsg = '❌ 此 Email 已被註冊';
+      } else if (error.code === 'auth/weak-password') {
+        errorMsg = '❌ 密碼強度不足 (需至少 6 位數)';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMsg = '❌ 無效的 Email 格式';
+      }
+
+      showToast(errorMsg);
+      throw err;
     }
   };
 
-  const logout = () => {
-    setUser(null);
+  const logout = async () => {
+    try {
+      await signOut(auth);
+      showToast('👋 已安全登出');
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
   };
 
   const { data: products = [], isLoading: isLoadingProducts } = useQuery<Product[]>({
